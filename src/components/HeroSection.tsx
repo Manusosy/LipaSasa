@@ -59,7 +59,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted, onLearnM
               <Button
                 variant="hero"
                 size="xl"
-                onClick={onGetStarted}
+                onClick={() => window.location.href = '/get-started'}
                 className="group"
               >
                 Start Free Trial

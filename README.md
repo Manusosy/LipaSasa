@@ -1,73 +1,148 @@
-# Welcome to your Lovable project
+# ChapaPay - FinTech SaaS Platform
 
-## Project info
+**ChapaPay** is a comprehensive SaaS platform that enables SMEs and freelancers in Kenya to collect payments easily via M-Pesa Paybill/Till, Airtel Money, and card payments. Built for simplicity and efficiency, ChapaPay bridges the gap between traditional payment methods and modern business needs.
 
-**URL**: https://lovable.dev/projects/9a5d291d-93ed-4099-a013-19573c0e622e
+## 🚀 What is ChapaPay?
 
-## How can I edit this code?
+ChapaPay eliminates the complexity of payment integrations by providing:
 
-There are several ways of editing your application.
+- **Simple Dashboard** for managing invoices, payment links, and customers
+- **M-Pesa Integration** via existing Paybill/Till numbers
+- **Multi-Payment Support** including Airtel Money and card payments
+- **WhatsApp-First Experience** for seamless customer interactions
+- **Professional Invoicing** with automated receipt generation
+- **Admin Dashboard** for platform management and analytics
 
-**Use Lovable**
+## 🎯 Key Features
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/9a5d291d-93ed-4099-a013-19573c0e622e) and start prompting.
+### For Business Owners (Sellers)
+- Link existing M-Pesa Paybill/Till numbers
+- Create and share professional invoices
+- Generate payment links instantly
+- Track customer payments and history
+- Export financial reports
+- WhatsApp integration for payment notifications
 
-Changes made via Lovable will be committed automatically to this repo.
+### For Platform Administrators
+- User management and analytics
+- Transaction monitoring across all users
+- Subscription management via Lemon Squeezy
+- System logs and compliance reporting
+- Platform-wide KPIs and insights
 
-**Use your preferred IDE**
+## 🛠 Technology Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Frontend:** React + TypeScript + Tailwind CSS
+- **Backend:** Supabase (PostgreSQL + Auth + Functions)
+- **Payment Processors:** Flutterwave, Paystack
+- **Billing:** Lemon Squeezy
+- **Notifications:** Email + WhatsApp API
+- **Hosting:** Vercel
+- **Build Tool:** Vite
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🏗 Project Structure
 
-Follow these steps:
+```
+src/
+├── components/          # Reusable UI components
+│   ├── ui/             # shadcn-ui components
+│   ├── Header.tsx      # Navigation header
+│   ├── HeroSection.tsx # Landing page hero
+│   └── ...
+├── pages/              # Application pages
+│   ├── Index.tsx       # Landing page
+│   ├── onboarding/     # Step-by-step setup
+│   ├── dashboard/      # User dashboards
+│   └── admin/          # Admin interface
+├── hooks/              # Custom React hooks
+├── lib/                # Utility functions
+└── integrations/       # Third-party integrations
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- Git
+
+### Installation
+
+```bash
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Navigate to project directory
+cd chapapay
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The application will be available at `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📋 Environment Setup
 
-**Use GitHub Codespaces**
+Create a `.env` file in the root directory:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_APP_ENV=development
+```
 
-## What technologies are used for this project?
+## 🎨 Design System
 
-This project is built with:
+ChapaPay uses a carefully crafted design system with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **Colors:** Professional blue/green palette with semantic tokens
+- **Typography:** Inter font family with proper hierarchy
+- **Components:** Consistent shadcn-ui based components
+- **Animations:** Smooth transitions and micro-interactions
+- **Responsive:** Mobile-first design approach
 
-## How can I deploy this project?
+## 📱 Target Market
 
-Simply open [Lovable](https://lovable.dev/projects/9a5d291d-93ed-4099-a013-19573c0e622e) and click on Share -> Publish.
+**Primary:** Kenya (M-Pesa ecosystem)
+**Secondary:** East Africa (Uganda, Tanzania)
+**Future:** West Africa (Nigeria, Ghana)
 
-## Can I connect a custom domain to my Lovable project?
+## 💰 Business Model
 
-Yes, you can!
+- **Starter Plan:** $9/month - Basic features
+- **Pro Plan:** $29/month - Advanced features + analytics
+- **Enterprise:** Custom pricing for large businesses
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🔒 Security & Compliance
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- Encrypted storage of payment credentials
+- GDPR-compliant data handling
+- Webhook validation for payment confirmations
+- Role-based access control
+- Audit logs for all transactions
+
+## 📈 Roadmap
+
+**Phase 1 (Current):** Core invoice creation, M-Pesa integration, basic dashboards
+**Phase 2:** Airtel Money, AI invoice assistant, advanced analytics
+**Phase 3:** Multi-country expansion, API for developers
+
+## 🤝 Contributing
+
+This project is built with ❤️ using [Lovable](https://lovable.dev). 
+
+To contribute:
+1. Use the Lovable interface for rapid development
+2. Or clone locally and push changes
+3. Follow the existing code patterns and design system
+
+## 🌍 Market Impact
+
+ChapaPay aims to democratize payment collection for African SMEs, making it as easy to accept digital payments as it is to receive cash. By leveraging existing M-Pesa infrastructure while providing modern SaaS tools, we're bridging traditional and digital commerce.
+
+---
+
+**Built with Lovable** - Turning ideas into production-ready applications.

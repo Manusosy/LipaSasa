@@ -49,7 +49,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavClick }) => {
           <div className="hidden md:flex items-center space-x-4">
             <Button
               variant="ghost"
-              onClick={() => handleNavClick('login')}
+              onClick={() => window.location.href = '/get-started'}
               className="font-medium"
             >
               Sign In
@@ -57,7 +57,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavClick }) => {
             <Button
               variant="hero"
               size="lg"
-              onClick={() => handleNavClick('signup')}
+              onClick={() => window.location.href = '/get-started'}
               className="font-semibold"
             >
               Get Started
@@ -95,14 +95,14 @@ export const Header: React.FC<HeaderProps> = ({ onNavClick }) => {
               <div className="flex flex-col space-y-3 pt-4 border-t border-border">
                 <Button
                   variant="ghost"
-                  onClick={() => handleNavClick('login')}
+                  onClick={() => window.location.href = '/get-started'}
                   className="justify-start font-medium"
                 >
                   Sign In
                 </Button>
                 <Button
                   variant="hero"
-                  onClick={() => handleNavClick('signup')}
+                  onClick={() => window.location.href = '/get-started'}
                   className="font-semibold"
                 >
                   Get Started
