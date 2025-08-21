@@ -5,32 +5,31 @@ import {
   CarouselItem,
 } from '@/components/ui/carousel';
 
-// Import payment provider logos
-import mpesaLogo from '@/assets/logos/mpesa-logo.png';
-import visaMastercardLogo from '@/assets/logos/visa-mastercard-logo.png';
-import flutterwaveLogo from '@/assets/logos/flutterwave-logo.png';
-import airtelMoneyLogo from '@/assets/logos/airtel-money-logo.png';
-
 const paymentProviders = [
   {
     name: 'M-Pesa',
-    logo: mpesaLogo,
+    logo: '/lovable-uploads/57976727-1964-4bfb-8a24-8203e4dabe4a.png',
     alt: 'M-Pesa mobile money payment system logo'
   },
   {
     name: 'Visa & Mastercard',
-    logo: visaMastercardLogo,
+    logo: '/lovable-uploads/9f22c927-5c7d-4a77-a269-90809c6e582a.png',
     alt: 'Visa and Mastercard payment cards logo'
   },
   {
     name: 'Flutterwave',
-    logo: flutterwaveLogo,
+    logo: '/lovable-uploads/06f57747-f061-4922-b5cf-d0c6eed53b19.png',
     alt: 'Flutterwave payment gateway logo'
   },
   {
     name: 'Airtel Money',
-    logo: airtelMoneyLogo,
+    logo: '/lovable-uploads/2d04d732-18aa-40b1-ad81-3c1f3310fb0a.png',
     alt: 'Airtel Money mobile payment service logo'
+  },
+  {
+    name: 'Paystack',
+    logo: '/lovable-uploads/05ed5649-3537-4f4f-bfb3-bb04270fd29f.png',
+    alt: 'Paystack payment gateway logo'
   }
 ];
 
