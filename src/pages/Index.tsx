@@ -13,12 +13,10 @@ const Index = () => {
   };
 
   const handleGetStarted = () => {
-    // In a real app, this would navigate to signup
-    console.log('Get started clicked');
+    window.location.href = '/get-started';
   };
 
   const handleLearnMore = () => {
-    // In a real app, this would show a demo or navigate to features
     handleNavigation('features');
   };
 
