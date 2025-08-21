@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Shield, Zap, Globe } from 'lucide-react';
 import heroImage from '@/assets/hero-fintech.jpg';
+import { PaymentLogosCarousel } from './PaymentLogosCarousel';
 
 interface HeroSectionProps {
   onGetStarted?: () => void;
@@ -78,12 +79,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted, onLearnM
             {/* Trust Indicators */}
             <div className="mt-12 pt-8 border-t border-border">
               <p className="text-sm text-muted-foreground mb-4">Integrated with leading payment providers</p>
-              <div className="flex flex-wrap items-center gap-8 opacity-60">
-                <span className="font-semibold text-lg">M-PESA</span>
-                <span className="font-semibold text-lg">Airtel Money</span>
-                <span className="font-semibold text-lg">Flutterwave</span>
-                <span className="font-semibold text-lg">Paystack</span>
-              </div>
+              <PaymentLogosCarousel />
             </div>
           </div>
 
