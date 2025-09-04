@@ -11,6 +11,14 @@ import SellerDashboard from "./pages/dashboard/SellerDashboard";
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import { AboutUs } from "./pages/about";
 import { ContactUs } from "./pages/contact";
+import { ApiDocs } from "./pages/docs";
+import { Blog } from "./pages/blog";
+import { Careers } from "./pages/careers";
+import { PressKit } from "./pages/press";
+import { HelpCenter } from "./pages/help";
+import { SystemStatus } from "./pages/status";
+import { TermsOfService } from "./pages/terms";
+import { PrivacyPolicy } from "./pages/privacy";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +36,14 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/about" element={<AboutUs />} />
             <Route path="/contact" element={<ContactUs />} />
+            <Route path="/docs" element={<ApiDocs />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/press" element={<PressKit />} />
+            <Route path="/help" element={<HelpCenter />} />
+            <Route path="/status" element={<SystemStatus />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
