@@ -50,7 +50,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavClick }) => {
           <div className="hidden md:flex items-center space-x-4">
             <Button
               variant="ghost"
-              onClick={() => window.location.href = '/get-started'}
+              onClick={() => window.location.href = '/auth'}
               className="font-medium"
             >
               Sign In
@@ -96,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavClick }) => {
               <div className="flex flex-col space-y-3 pt-4 border-t border-border">
                 <Button
                   variant="ghost"
-                  onClick={() => window.location.href = '/get-started'}
+                  onClick={() => window.location.href = '/auth'}
                   className="justify-start font-medium"
                 >
                   Sign In
