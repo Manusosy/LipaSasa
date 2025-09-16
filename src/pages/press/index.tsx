@@ -4,25 +4,25 @@ import { Download, Mail, Calendar } from 'lucide-react';
 export const PressKit = () => {
   const pressReleases = [
     {
-      title: "ChapaPay Raises $2M Series A to Expand Payment Solutions",
+      title: "LipaSasa Raises $2M Series A to Expand Payment Solutions",
       date: "March 20, 2024",
       excerpt: "Leading Kenyan fintech company secures funding to accelerate growth across East Africa."
     },
     {
-      title: "ChapaPay Partners with Major Banks to Enhance Payment Infrastructure",
+      title: "LipaSasa Partners with Major Banks to Enhance Payment Infrastructure",
       date: "February 15, 2024",
       excerpt: "Strategic partnerships aim to improve payment processing and financial inclusion."
     },
     {
-      title: "ChapaPay Launches New API for Seamless M-Pesa Integration",
+      title: "LipaSasa Launches New API for Seamless M-Pesa Integration",
       date: "January 10, 2024",
       excerpt: "New developer tools make it easier for businesses to accept mobile money payments."
     }
   ];
 
   const mediaAssets = [
-    { name: "ChapaPay Logo (PNG)", size: "2.4 MB", type: "Logo" },
-    { name: "ChapaPay Logo (SVG)", size: "156 KB", type: "Logo" },
+    { name: "LipaSasa Logo (PNG)", size: "2.4 MB", type: "Logo" },
+    { name: "LipaSasa Logo (SVG)", size: "156 KB", type: "Logo" },
     { name: "Brand Guidelines", size: "8.2 MB", type: "PDF" },
     { name: "Product Screenshots", size: "15.3 MB", type: "Images" }
   ];
@@ -57,10 +57,10 @@ export const PressKit = () => {
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold mb-8">About ChapaPay</h2>
+            <h2 className="text-3xl font-bold mb-8">About LipaSasa</h2>
             <div className="prose prose-lg max-w-none">
               <p className="text-lg text-muted-foreground mb-6">
-                ChapaPay is Kenya's leading payment solution provider, enabling businesses
+                LipaSasa is Kenya's leading payment solution provider, enabling businesses
                 to accept M-Pesa, card payments, and bank transfers through a single platform.
                 Founded in 2023, we've helped over 1,200 businesses streamline their payment
                 processes and drive growth.
@@ -145,16 +145,16 @@ export const PressKit = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="mailto:press@chapapay.com"
+                href="mailto:press@lipasasa.online"
                 className="px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90"
               >
-                press@chapapay.com
+                press@lipasasa.online
               </a>
               <a
-                href="tel:+254700000000"
+                href="tel:+254716972103"
                 className="px-6 py-3 border border-border rounded-lg font-medium hover:bg-white"
               >
-                +254 700 000 000
+                +254716972103
               </a>
             </div>
           </div>

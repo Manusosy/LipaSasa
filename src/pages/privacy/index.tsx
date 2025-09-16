@@ -162,8 +162,8 @@ export const PrivacyPolicy = () => {
               please contact us at:
             </p>
             <ul>
-              <li>Email: privacy@chapapay.com</li>
-              <li>Phone: +254 700 000 000</li>
+              <li>Email: privacy@lipasasa.online</li>
+              <li>Phone: +254716972103</li>
               <li>Address: 123 Business Hub, Westlands, Nairobi, Kenya</li>
             </ul>
           </div>

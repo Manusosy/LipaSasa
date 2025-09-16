@@ -62,7 +62,7 @@ export const SystemStatus = () => {
               System Status
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
-              Real-time status of all ChapaPay services and systems
+              Real-time status of all LipaSasa services and systems
             </p>
             <div className="inline-flex items-center gap-2 px-6 py-3 bg-green-50 text-green-700 rounded-full">
               <CheckCircle className="h-5 w-5" />

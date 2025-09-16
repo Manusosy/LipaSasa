@@ -27,13 +27,13 @@ export const Footer: React.FC = () => {
     contact: [
       { 
         icon: Phone,
-        text: '+254 700 000 000',
-        href: 'tel:+254700000000'
+        text: '+254716972103',
+        href: 'tel:+254716972103'
       },
       {
         icon: Mail,
-        text: 'support@chapapay.com',
-        href: 'mailto:support@chapapay.com'
+        text: 'support@lipasasa.online',
+        href: 'mailto:support@lipasasa.online'
       },
       {
         icon: MapPin,
@@ -44,10 +44,10 @@ export const Footer: React.FC = () => {
   };
 
   const socialLinks = [
-    { icon: Facebook, href: 'https://facebook.com/chapapay' },
-    { icon: Twitter, href: 'https://twitter.com/chapapay' },
-    { icon: Instagram, href: 'https://instagram.com/chapapay' },
-    { icon: Linkedin, href: 'https://linkedin.com/company/chapapay' },
+    { icon: Facebook, href: 'https://facebook.com/lipasasa' },
+    { icon: Twitter, href: 'https://twitter.com/lipasasa' },
+    { icon: Instagram, href: 'https://instagram.com/lipasasa' },
+    { icon: Linkedin, href: 'https://linkedin.com/company/lipasasa' },
   ];
 
   return (
@@ -57,7 +57,7 @@ export const Footer: React.FC = () => {
           {/* Brand Column */}
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2 mb-6">
-              <img src="/chapapay-logo.png" alt="ChapaPay Logo" className="h-8" />
+              <img src="/chapapay-logo.png" alt="LipaSasa Logo" className="h-8" />
             </div>
             <p className="text-muted-foreground mb-6 max-w-md">
               The simple way for Kenyan businesses to collect M-Pesa, Airtel Money, and card payments.
@@ -146,7 +146,7 @@ export const Footer: React.FC = () => {
               ))}
             </div>
             <p className="text-sm text-muted-foreground">
-              © {currentYear} ChapaPay. All rights reserved.
+              © {currentYear} LipaSasa. All rights reserved.
             </p>
           </div>
         </div>

@@ -12,7 +12,7 @@ export const TermsOfService = () => {
               Terms of Service
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
-              These terms govern the use of ChapaPay services and platform
+              These terms govern the use of LipaSasa services and platform
             </p>
             <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
@@ -34,14 +34,14 @@ export const TermsOfService = () => {
           <div className="max-w-4xl mx-auto prose prose-lg">
             <h2>1. Acceptance of Terms</h2>
             <p>
-              By accessing and using ChapaPay's services, you agree to be bound by these Terms of Service
+              By accessing and using LipaSasa's services, you agree to be bound by these Terms of Service
               and all applicable laws and regulations. If you do not agree with any of these terms,
               you are prohibited from using or accessing this site.
             </p>
 
             <h2>2. Description of Service</h2>
             <p>
-              ChapaPay provides payment processing services including but not limited to:
+              LipaSasa provides payment processing services including but not limited to:
             </p>
             <ul>
               <li>M-Pesa payment processing</li>
@@ -60,7 +60,7 @@ export const TermsOfService = () => {
 
             <h2>4. Payment Processing</h2>
             <p>
-              ChapaPay acts as a payment processor and facilitator. We do not guarantee the
+              LipaSasa acts as a payment processor and facilitator. We do not guarantee the
               completion of any transaction and are not responsible for disputes between
               merchants and customers.
             </p>
@@ -98,7 +98,7 @@ export const TermsOfService = () => {
 
             <h2>9. Limitation of Liability</h2>
             <p>
-              ChapaPay's liability is limited to the maximum extent permitted by law. We are not
+              LipaSasa's liability is limited to the maximum extent permitted by law. We are not
               liable for indirect, incidental, or consequential damages arising from the use of
               our services.
             </p>
@@ -128,8 +128,8 @@ export const TermsOfService = () => {
               If you have any questions about these Terms of Service, please contact us at:
             </p>
             <ul>
-              <li>Email: legal@chapapay.com</li>
-              <li>Phone: +254 700 000 000</li>
+              <li>Email: legal@lipasasa.online</li>
+              <li>Phone: +254716972103</li>
               <li>Address: 123 Business Hub, Westlands, Nairobi, Kenya</li>
             </ul>
           </div>

@@ -54,7 +54,7 @@ export const BusinessInfoStep: React.FC<BusinessInfoStepProps> = ({
         </div>
         <h2 className="text-2xl font-bold text-foreground">Tell us about your business</h2>
         <p className="text-muted-foreground mt-2">
-          We need some basic information to set up your ChapaPay account
+          We need some basic information to set up your LipaSasa account
         </p>
       </div>
 
@@ -99,7 +99,7 @@ export const BusinessInfoStep: React.FC<BusinessInfoStepProps> = ({
             <Input
               id="phone"
               type="tel"
-              placeholder="+254 700 000 000"
+              placeholder="+254716972103"
               value={data.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
               className="transition-smooth focus:ring-2 focus:ring-primary/20"

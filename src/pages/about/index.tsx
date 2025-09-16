@@ -135,7 +135,7 @@ export const AboutUs = () => {
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-6">Ready to Get Started?</h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Join thousands of businesses that trust ChapaPay for their payment needs.
+              Join thousands of businesses that trust LipaSasa for their payment needs.
             </p>
             <button className="inline-flex items-center px-6 py-3 rounded-full bg-primary text-white font-medium hover:bg-primary/90 transition-colors">
               Start Your Free Trial

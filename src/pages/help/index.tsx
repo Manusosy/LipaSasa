@@ -8,7 +8,7 @@ export const HelpCenter = () => {
       title: "Getting Started",
       description: "Learn how to set up your account and start accepting payments",
       articles: [
-        "How to create your ChapaPay account",
+        "How to create your LipaSasa account",
         "Setting up your first payment method",
         "Understanding transaction fees",
         "Configuring payment notifications"

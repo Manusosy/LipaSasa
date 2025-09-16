@@ -113,7 +113,7 @@ export const FeaturesSection: React.FC = () => {
             <span className="gradient-hero bg-clip-text text-transparent">Accept Payments</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            ChapaPay combines the power of mobile money with professional invoicing and customer management tools.
+            LipaSasa combines the power of mobile money with professional invoicing and customer management tools.
           </p>
         </div>
 
@@ -144,7 +144,7 @@ export const FeaturesSection: React.FC = () => {
               Built for Every Type of Business
             </h3>
             <p className="text-lg text-muted-foreground">
-              Whether you're just starting or scaling up, ChapaPay adapts to your business needs
+              Whether you're just starting or scaling up, LipaSasa adapts to your business needs
             </p>
           </div>
 

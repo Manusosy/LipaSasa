@@ -6,7 +6,7 @@ export const Blog = () => {
     {
       title: "The Future of Digital Payments in Kenya",
       excerpt: "Explore how mobile money and digital payments are transforming the Kenyan economy.",
-      author: "ChapaPay Team",
+      author: "LipaSasa Team",
       date: "March 15, 2024",
       image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d"
     },
@@ -33,7 +33,7 @@ export const Blog = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              ChapaPay Blog
+              LipaSasa Blog
             </h1>
             <p className="text-xl text-muted-foreground">
               Insights, updates, and stories from the world of digital payments

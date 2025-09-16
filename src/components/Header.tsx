@@ -28,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavClick }) => {
           <div className="flex items-center">
             <img 
               src="/chapapay-logo.png" 
-              alt="ChapaPay Logo" 
+              alt="LipaSasa Logo"
               className="h-14 w-auto" 
             />
           </div>

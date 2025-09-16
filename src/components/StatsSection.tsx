@@ -17,7 +17,7 @@ export const StatsSection: React.FC = () => {
       icon: Users,
       value: '1,200+',
       label: 'Active Businesses',
-      description: 'SMEs trusting ChapaPay',
+      description: 'SMEs trusting LipaSasa',
       color: 'text-primary',
       bgColor: 'bg-primary/10',
     },
@@ -47,7 +47,7 @@ export const StatsSection: React.FC = () => {
             Trusted by Kenyan Businesses
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-            Join thousands of SMEs, freelancers, and entrepreneurs who have simplified their payment collection with ChapaPay
+            Join thousands of SMEs, freelancers, and entrepreneurs who have simplified their payment collection with LipaSasa
           </p>
           <div className="flex justify-center">
             <TrustedCompanies />

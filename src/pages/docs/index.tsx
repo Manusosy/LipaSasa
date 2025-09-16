@@ -12,7 +12,7 @@ export const ApiDocs = () => {
               API Documentation
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
-              Integrate ChapaPay seamlessly into your applications with our comprehensive API
+              Integrate LipaSasa seamlessly into your applications with our comprehensive API
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
               <button className="px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90">
@@ -48,13 +48,13 @@ export const ApiDocs = () => {
             <h2 className="text-3xl font-bold mb-8">Quick Start</h2>
             <div className="bg-slate-900 text-white p-6 rounded-lg mb-8">
               <pre className="text-sm">
-{`curl -X POST https://api.chapapay.com/v1/payments \\
+{`curl -X POST https://api.lipasasa.online/v1/payments \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
     "amount": 1000,
     "currency": "KES",
-    "phone": "+254700000000",
+    "phone": "+254716972103",
     "reference": "order-123"
   }'`}
               </pre>

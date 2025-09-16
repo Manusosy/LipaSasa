@@ -102,7 +102,7 @@ export const PaymentSetupStep: React.FC<PaymentSetupStepProps> = ({
               <Label htmlFor="airtelMoney">Airtel Money Number</Label>
               <Input
                 id="airtelMoney"
-                placeholder="e.g., +254 700 000 000"
+                placeholder="e.g., +254716972103"
                 value={data.airtelMoney}
                 onChange={(e) => handleInputChange('airtelMoney', e.target.value)}
               />

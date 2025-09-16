@@ -1,10 +1,10 @@
 # LipaSasa - FinTech SaaS Platform
 
-**LipaSasa** is a comprehensive SaaS platform that enables SMEs and freelancers in Kenya to collect payments easily via M-Pesa Paybill/Till, Airtel Money, and card payments. Built for simplicity and efficiency, ChapaPay bridges the gap between traditional payment methods and modern business needs.
+**LipaSasa** is a comprehensive SaaS platform that enables SMEs and freelancers in Kenya to collect payments easily via M-Pesa Paybill/Till, Airtel Money, and card payments. Built for simplicity and efficiency, LipaSasa bridges the gap between traditional payment methods and modern business needs.
 
-## 🚀 What is ChapaPay?
+## 🚀 What is LipaSasa?
 
-ChapaPay eliminates the complexity of payment integrations by providing:
+LipaSasa eliminates the complexity of payment integrations by providing:
 
 - **Simple Dashboard** for managing invoices, payment links, and customers
 - **M-Pesa Integration** via existing Paybill/Till numbers
@@ -73,7 +73,7 @@ src/
 git clone <YOUR_GIT_URL>
 
 # Navigate to project directory
-cd chapapay
+cd lipasasa
 
 # Install dependencies
 npm install
@@ -139,7 +139,7 @@ To contribute:
 
 ## 🌍 Market Impact
 
-ChapaPay aims to democratize payment collection for African SMEs, making it as easy to accept digital payments as it is to receive cash. By leveraging existing M-Pesa infrastructure while providing modern SaaS tools, we're bridging traditional and digital commerce.
+LipaSasa aims to democratize payment collection for African SMEs, making it as easy to accept digital payments as it is to receive cash. By leveraging existing M-Pesa infrastructure while providing modern SaaS tools, we're bridging traditional and digital commerce.
 
 ---
 

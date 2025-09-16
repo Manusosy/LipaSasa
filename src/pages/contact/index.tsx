@@ -81,13 +81,13 @@ export const ContactUs = () => {
                   {
                     icon: Phone,
                     title: 'Call Us',
-                    content: '+254 700 000 000',
+                    content: '+254716972103',
                     details: 'Monday to Friday, 9am to 6pm'
                   },
                   {
                     icon: Mail,
                     title: 'Email Us',
-                    content: 'support@chapapay.com',
+                    content: 'support@lipasasa.online',
                     details: "We'll respond within 24 hours"
                   },
                   {

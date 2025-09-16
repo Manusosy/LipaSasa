@@ -170,7 +170,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
                 className="mt-1"
               />
               <Label htmlFor="agreeToTerms" className="text-sm leading-relaxed cursor-pointer">
-                I agree to ChapaPay's{' '}
+                I agree to LipaSasa's{' '}
                 <a href="/terms" className="text-primary hover:underline font-medium">
                   Terms of Service
                 </a>{' '}

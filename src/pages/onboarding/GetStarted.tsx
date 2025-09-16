@@ -121,7 +121,7 @@ const GetStarted = () => {
       <div className="w-full max-w-4xl">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Welcome to ChapaPay
+            Welcome to LipaSasa
           </h1>
           <p className="text-muted-foreground">
             Let's set up your account in just a few steps
