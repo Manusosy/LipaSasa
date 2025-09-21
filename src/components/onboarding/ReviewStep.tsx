@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { ChevronLeft, Check, Building2, Smartphone, Star, Zap } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ChevronLeft, Check, Building2, Smartphone, Star, Zap, Lock } from 'lucide-react';
 export interface OnboardingData {
   businessInfo: {
     businessName: string;
@@ -22,6 +23,7 @@ export interface OnboardingData {
   selectedPlan: 'starter' | 'pro';
   agreeToTerms: boolean;
   subscribeNewsletter: boolean;
+  password: string;
 }
 
 interface ReviewStepProps {
@@ -37,7 +39,7 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
   onComplete,
   onBack
 }) => {
-  const isValid = data.agreeToTerms;
+  const isValid = data.agreeToTerms && data.password && data.password.length >= 6;
 
   const planDetails = {
     starter: { name: 'Starter', price: '$9/month', icon: Star },
@@ -161,7 +163,31 @@ export const ReviewStep: React.FC<ReviewStepProps> = ({
 
         {/* Agreement Section */}
         <Card className="border-2 border-primary/20">
-          <CardContent className="pt-6 space-y-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-primary" />
+              Account Security & Agreement
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium">
+                Create Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Create a strong password (min. 6 characters)"
+                value={data.password}
+                onChange={(e) => onUpdate({ password: e.target.value })}
+                minLength={6}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Your password must be at least 6 characters long
+              </p>
+            </div>
+            
             <div className="flex items-start space-x-3">
               <Checkbox
                 id="agreeToTerms"
