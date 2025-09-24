@@ -14,7 +14,132 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string | null
+          customer_email: string | null
+          customer_name: string
+          description: string | null
+          expires_at: string | null
+          id: string
+          invoice_number: string
+          payment_link: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string | null
+          customer_email?: string | null
+          customer_name: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          invoice_number: string
+          payment_link?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          invoice_number?: string
+          payment_link?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payment_methods: {
+        Row: {
+          airtel_money: string | null
+          created_at: string
+          enable_cards: boolean | null
+          id: string
+          mpesa_paybill: string | null
+          mpesa_till: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          airtel_money?: string | null
+          created_at?: string
+          enable_cards?: boolean | null
+          id?: string
+          mpesa_paybill?: string | null
+          mpesa_till?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          airtel_money?: string | null
+          created_at?: string
+          enable_cards?: boolean | null
+          id?: string
+          mpesa_paybill?: string | null
+          mpesa_till?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          business_name: string
+          country: string | null
+          created_at: string
+          email: string
+          id: string
+          industry: string | null
+          owner_name: string
+          phone: string | null
+          selected_plan: string | null
+          subscribe_newsletter: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          business_name: string
+          country?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          industry?: string | null
+          owner_name: string
+          phone?: string | null
+          selected_plan?: string | null
+          subscribe_newsletter?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          business_name?: string
+          country?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          industry?: string | null
+          owner_name?: string
+          phone?: string | null
+          selected_plan?: string | null
+          subscribe_newsletter?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
