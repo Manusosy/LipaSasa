@@ -11,7 +11,6 @@ import {
   Activity,
   Calendar,
   CreditCard,
-  LogOut
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -153,10 +152,6 @@ const SellerDashboard = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -181,15 +176,15 @@ const SellerDashboard = () => {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-gradient-subtle">
         <DashboardSidebar />
         
         <SidebarInset className="flex-1">
           {/* Header */}
-          <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-soft">
+          <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
             <div className="flex h-16 items-center gap-4 px-6">
-              <SidebarTrigger />
+              <SidebarTrigger className="lg:hidden" />
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
                 <p className="text-sm text-muted-foreground">
@@ -197,14 +192,10 @@ const SellerDashboard = () => {
                 </p>
               </div>
               <div className="flex items-center gap-3">
+                <CreateInvoiceDialog onInvoiceCreated={fetchUserData} />
                 <Button variant="outline" size="sm">
                   <FileText className="w-4 h-4 mr-2" />
-                  Reports
-                </Button>
-                <CreateInvoiceDialog onInvoiceCreated={fetchUserData} />
-                <Button variant="outline" size="sm" onClick={handleSignOut}>
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
+                  <span className="hidden md:inline">Reports</span>
                 </Button>
               </div>
             </div>
@@ -213,72 +204,86 @@ const SellerDashboard = () => {
           <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="shadow-soft border-0">
+          <Card className="border-0 bg-gradient-elegant hover:shadow-medium transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Received</CardTitle>
-              <DollarSign className="h-4 w-4 text-success" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Received</CardTitle>
+              <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                <DollarSign className="h-5 w-5 text-success" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-success">
+              <div className="text-3xl font-bold text-foreground">
                 KSh {stats.totalReceived.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <TrendingUp className="h-3 w-3 text-success" />
                 +12.5% from last month
               </p>
             </CardContent>
           </Card>
 
-          <Card className="shadow-soft border-0">
+          <Card className="border-0 bg-gradient-elegant hover:shadow-medium transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Invoices</CardTitle>
-              <FileText className="h-4 w-4 text-warning" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Invoices</CardTitle>
+              <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                <FileText className="h-5 w-5 text-warning" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-warning">{stats.pendingInvoices}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-3xl font-bold text-foreground">{stats.pendingInvoices}</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 KSh 24,800 pending
               </p>
             </CardContent>
           </Card>
 
-          <Card className="shadow-soft border-0">
+          <Card className="border-0 bg-gradient-elegant hover:shadow-medium transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Customers</CardTitle>
-              <Users className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Active Customers</CardTitle>
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">{stats.activeCustomers}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-3xl font-bold text-foreground">{stats.activeCustomers}</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 +3 new this month
               </p>
             </CardContent>
           </Card>
 
-          <Card className="shadow-soft border-0">
+          <Card className="border-0 bg-gradient-elegant hover:shadow-medium transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">This Month</CardTitle>
-              <TrendingUp className="h-4 w-4 text-success" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
+              <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-secondary" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-success">
+              <div className="text-3xl font-bold text-foreground">
                 KSh {stats.monthlyRevenue.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <TrendingUp className="h-3 w-3 text-success" />
                 +8.2% from last month
               </p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Activity */}
           <div className="lg:col-span-2">
-            <Card className="shadow-elegant border-0">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-primary" />
-                  Recent Activity
-                </CardTitle>
+            <Card className="border-0 bg-gradient-elegant shadow-medium">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Activity className="w-4 h-4 text-primary" />
+                    </div>
+                    Recent Activity
+                  </CardTitle>
+                </div>
                 <CardDescription>
                   Latest payments and invoices from your customers
                 </CardDescription>
@@ -337,9 +342,9 @@ const SellerDashboard = () => {
 
           {/* Quick Actions */}
           <div className="space-y-6">
-            <Card className="shadow-elegant border-0">
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+            <Card className="border-0 bg-gradient-elegant shadow-medium">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Quick Actions</CardTitle>
                 <CardDescription>
                   Common tasks to manage your business
                 </CardDescription>
@@ -362,9 +367,9 @@ const SellerDashboard = () => {
             </Card>
 
             {/* Payment Methods Status */}
-            <Card className="shadow-elegant border-0">
-              <CardHeader>
-                <CardTitle>Payment Methods</CardTitle>
+            <Card className="border-0 bg-gradient-elegant shadow-medium">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Payment Methods</CardTitle>
                 <CardDescription>
                   Your connected payment options
                 </CardDescription>

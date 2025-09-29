@@ -30,27 +30,28 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/get-started" element={<GetStarted />} />
-            <Route path="/dashboard" element={<SellerDashboard />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/about" element={<AboutUs />} />
-            <Route path="/contact" element={<ContactUs />} />
-            <Route path="/docs" element={<ApiDocs />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/careers" element={<Careers />} />
-            <Route path="/press" element={<PressKit />} />
-            <Route path="/help" element={<HelpCenter />} />
-            <Route path="/status" element={<SystemStatus />} />
-            <Route path="/terms" element={<TermsOfService />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/auth" element={<AuthPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Layout>
+        <Routes>
+          {/* Dashboard Routes - No Header/Footer */}
+          <Route path="/dashboard" element={<SellerDashboard />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          
+          {/* Main Site Routes - With Header/Footer */}
+          <Route path="/" element={<Layout><Index /></Layout>} />
+          <Route path="/get-started" element={<Layout><GetStarted /></Layout>} />
+          <Route path="/about" element={<Layout><AboutUs /></Layout>} />
+          <Route path="/contact" element={<Layout><ContactUs /></Layout>} />
+          <Route path="/docs" element={<Layout><ApiDocs /></Layout>} />
+          <Route path="/blog" element={<Layout><Blog /></Layout>} />
+          <Route path="/careers" element={<Layout><Careers /></Layout>} />
+          <Route path="/press" element={<Layout><PressKit /></Layout>} />
+          <Route path="/help" element={<Layout><HelpCenter /></Layout>} />
+          <Route path="/status" element={<Layout><SystemStatus /></Layout>} />
+          <Route path="/terms" element={<Layout><TermsOfService /></Layout>} />
+          <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
+          <Route path="/auth" element={<Layout><AuthPage /></Layout>} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<Layout><NotFound /></Layout>} />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

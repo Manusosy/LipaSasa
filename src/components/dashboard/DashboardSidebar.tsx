@@ -8,6 +8,8 @@ import {
   Settings,
   BarChart3,
   HelpCircle,
+  Home,
+  LogOut,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -20,7 +22,12 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  useSidebar,
 } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 const navigationItems = [
   {
@@ -64,40 +71,59 @@ const settingsItems = [
 ];
 
 export function DashboardSidebar() {
+  const { open } = useSidebar();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
+
+  const handleGoHome = () => {
+    navigate('/');
+  };
+
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="flex items-center gap-2">
-          <img 
-            src="/chapapay-logo.png" 
-            alt="LipaSasa" 
-            className="h-8 w-auto"
-          />
-          <span className="font-bold text-lg text-sidebar-foreground group-data-[collapsible=icon]:hidden">
-            LipaSasa
-          </span>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center shrink-0">
+            <img 
+              src="/chapapay-logo.png" 
+              alt="LipaSasa" 
+              className="h-6 w-auto"
+            />
+          </div>
+          <div className="group-data-[collapsible=icon]:hidden">
+            <h2 className="font-bold text-lg text-sidebar-foreground">LipaSasa</h2>
+            <p className="text-xs text-muted-foreground">Payment Platform</p>
+          </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="p-2">
         <SidebarGroup>
-          <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-3 py-2">
+            Main Menu
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild tooltip={item.title}>
                     <NavLink
                       to={item.url}
                       end={item.url === '/dashboard'}
                       className={({ isActive }) =>
-                        isActive
-                          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                          : 'hover:bg-sidebar-accent/50'
+                        `flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
+                          isActive
+                            ? 'bg-primary text-primary-foreground shadow-soft font-medium'
+                            : 'hover:bg-sidebar-accent text-sidebar-foreground'
+                        }`
                       }
                     >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <item.icon className="h-5 w-5 shrink-0" />
+                      <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -106,23 +132,29 @@ export function DashboardSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        <Separator className="my-4" />
+
         <SidebarGroup>
-          <SidebarGroupLabel>Account</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-3 py-2">
+            Account
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {settingsItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild tooltip={item.title}>
                     <NavLink
                       to={item.url}
                       className={({ isActive }) =>
-                        isActive
-                          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                          : 'hover:bg-sidebar-accent/50'
+                        `flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
+                          isActive
+                            ? 'bg-primary text-primary-foreground shadow-soft font-medium'
+                            : 'hover:bg-sidebar-accent text-sidebar-foreground'
+                        }`
                       }
                     >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <item.icon className="h-5 w-5 shrink-0" />
+                      <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -132,10 +164,28 @@ export function DashboardSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-4">
-        <div className="text-xs text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
+      <SidebarFooter className="border-t border-sidebar-border p-3 gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full justify-start gap-2"
+          onClick={handleGoHome}
+        >
+          <Home className="h-4 w-4" />
+          <span className="group-data-[collapsible=icon]:hidden">Back to Site</span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+          onClick={handleSignOut}
+        >
+          <LogOut className="h-4 w-4" />
+          <span className="group-data-[collapsible=icon]:hidden">Sign Out</span>
+        </Button>
+        <div className="text-xs text-muted-foreground pt-2 group-data-[collapsible=icon]:hidden">
           <p>© 2025 LipaSasa</p>
-          <p>Version 1.0.0</p>
+          <p className="text-[10px] opacity-60">v1.0.0</p>
         </div>
       </SidebarFooter>
     </Sidebar>
