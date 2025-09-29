@@ -17,6 +17,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { CreateInvoiceDialog } from '@/components/dashboard/CreateInvoiceDialog';
 import { PaymentMethodsDialog } from '@/components/dashboard/PaymentMethodsDialog';
+import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
+import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { User, Session } from '@supabase/supabase-js';
 
 interface UserProfile {
@@ -179,33 +181,36 @@ const SellerDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
-      {/* Header */}
-      <header className="bg-background border-b shadow-soft">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-              <p className="text-sm text-muted-foreground">
-                Welcome back, {profile?.owner_name || profile?.business_name || 'User'}!
-              </p>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-gradient-subtle">
+        <DashboardSidebar />
+        
+        <SidebarInset className="flex-1">
+          {/* Header */}
+          <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-soft">
+            <div className="flex h-16 items-center gap-4 px-6">
+              <SidebarTrigger />
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+                <p className="text-sm text-muted-foreground">
+                  Welcome back, {profile?.owner_name || profile?.business_name || 'User'}!
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Reports
+                </Button>
+                <CreateInvoiceDialog onInvoiceCreated={fetchUserData} />
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm">
-                <FileText className="w-4 h-4 mr-2" />
-                Reports
-              </Button>
-              <CreateInvoiceDialog onInvoiceCreated={fetchUserData} />
-              <Button variant="outline" size="sm" onClick={handleSignOut}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+          </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="shadow-soft border-0">
@@ -398,8 +403,10 @@ const SellerDashboard = () => {
             </Card>
           </div>
         </div>
+          </div>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
