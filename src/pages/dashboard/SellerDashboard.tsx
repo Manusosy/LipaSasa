@@ -1,24 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
   DollarSign, 
   TrendingUp, 
   Users, 
   FileText, 
-  Plus,
   Activity,
   Calendar,
-  CreditCard,
+  Search,
+  Bell,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { CreateInvoiceDialog } from '@/components/dashboard/CreateInvoiceDialog';
 import { PaymentMethodsDialog } from '@/components/dashboard/PaymentMethodsDialog';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
-import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { User, Session } from '@supabase/supabase-js';
+import { cn } from '@/lib/utils';
 
 interface UserProfile {
   business_name: string;
@@ -60,10 +61,11 @@ const SellerDashboard = () => {
     monthlyRevenue: 0
   });
   const [loading, setLoading] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -75,7 +77,6 @@ const SellerDashboard = () => {
       }
     );
 
-    // Check for existing session and fetch data
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -95,7 +96,6 @@ const SellerDashboard = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch profile
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
@@ -104,7 +104,6 @@ const SellerDashboard = () => {
 
       if (profileData) setProfile(profileData);
 
-      // Fetch payment methods
       const { data: paymentData } = await supabase
         .from('payment_methods')
         .select('*')
@@ -113,7 +112,6 @@ const SellerDashboard = () => {
 
       if (paymentData) setPaymentMethods(paymentData);
 
-      // Fetch recent invoices
       const { data: invoicesData } = await supabase
         .from('invoices')
         .select('*')
@@ -123,12 +121,10 @@ const SellerDashboard = () => {
 
       if (invoicesData) setInvoices(invoicesData);
 
-      // Calculate stats
       const totalReceived = invoicesData?.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
       const pendingInvoices = invoicesData?.filter(inv => inv.status === 'pending').length || 0;
       const activeCustomers = new Set(invoicesData?.map(inv => inv.customer_name)).size || 0;
       
-      // Calculate monthly revenue (current month)
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
       const monthlyRevenue = invoicesData?.filter(inv => {
@@ -152,7 +148,6 @@ const SellerDashboard = () => {
     }
   };
 
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -166,7 +161,7 @@ const SellerDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading dashboard...</p>
@@ -176,242 +171,280 @@ const SellerDashboard = () => {
   }
 
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen flex w-full bg-gradient-subtle">
-        <DashboardSidebar />
-        
-        <SidebarInset className="flex-1">
-          {/* Header */}
-          <header className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-            <div className="flex h-16 items-center gap-4 px-6">
-              <SidebarTrigger className="lg:hidden" />
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-                <p className="text-sm text-muted-foreground">
-                  Welcome back, {profile?.owner_name || profile?.business_name || 'User'}!
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <CreateInvoiceDialog onInvoiceCreated={fetchUserData} />
-                <Button variant="outline" size="sm">
-                  <FileText className="w-4 h-4 mr-2" />
-                  <span className="hidden md:inline">Reports</span>
-                </Button>
-              </div>
+    <div className="min-h-screen bg-background flex">
+      <DashboardSidebar 
+        collapsed={sidebarCollapsed} 
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} 
+      />
+      
+      <main className={cn(
+        'flex-1 transition-all duration-300',
+        sidebarCollapsed ? 'ml-20' : 'ml-64'
+      )}>
+        {/* Dashboard Header */}
+        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
+          <div className="flex items-center justify-between h-16 px-6">
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
+              <p className="text-xs text-muted-foreground">
+                Welcome back, {profile?.owner_name || profile?.business_name || 'User'}
+              </p>
             </div>
-          </header>
+            <div className="flex items-center gap-3">
+              <div className="relative hidden md:block">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search..."
+                  className="pl-9 w-64 h-9"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
+              </Button>
+              <CreateInvoiceDialog onInvoiceCreated={fetchUserData} />
+            </div>
+          </div>
+        </header>
 
-          <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-0 bg-gradient-elegant hover:shadow-medium transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Received</CardTitle>
-              <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-                <DollarSign className="h-5 w-5 text-success" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
-                KSh {stats.totalReceived.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <TrendingUp className="h-3 w-3 text-success" />
-                +12.5% from last month
-              </p>
-            </CardContent>
-          </Card>
+        {/* Dashboard Content */}
+        <div className="p-6 max-w-7xl mx-auto">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <Card className="border border-border hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Received</CardTitle>
+                <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                  <DollarSign className="h-5 w-5 text-success" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-foreground">
+                  KSh {stats.totalReceived.toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3 text-success" />
+                  All time earnings
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card className="border-0 bg-gradient-elegant hover:shadow-medium transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Invoices</CardTitle>
-              <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                <FileText className="h-5 w-5 text-warning" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">{stats.pendingInvoices}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                KSh 24,800 pending
-              </p>
-            </CardContent>
-          </Card>
+            <Card className="border border-border hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Pending Invoices</CardTitle>
+                <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                  <FileText className="h-5 w-5 text-warning" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-foreground">{stats.pendingInvoices}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Awaiting payment
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card className="border-0 bg-gradient-elegant hover:shadow-medium transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Active Customers</CardTitle>
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">{stats.activeCustomers}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                +3 new this month
-              </p>
-            </CardContent>
-          </Card>
+            <Card className="border border-border hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Active Customers</CardTitle>
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-foreground">{stats.activeCustomers}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Total customers
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card className="border-0 bg-gradient-elegant hover:shadow-medium transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
-              <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-secondary" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
-                KSh {stats.monthlyRevenue.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <TrendingUp className="h-3 w-3 text-success" />
-                +8.2% from last month
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            <Card className="border border-border hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-foreground">
+                  KSh {stats.monthlyRevenue.toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Revenue this month
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Activity */}
-          <div className="lg:col-span-2">
-            <Card className="border-0 bg-gradient-elegant shadow-medium">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Recent Activity */}
+            <div className="lg:col-span-2">
+              <Card className="border border-border">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Activity className="w-4 h-4 text-primary" />
                     </div>
-                    Recent Activity
-                  </CardTitle>
-                </div>
-                <CardDescription>
-                  Latest payments and invoices from your customers
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {invoices.length > 0 ? invoices.map((invoice) => (
-                    <div
-                      key={invoice.id}
-                      className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <FileText className="w-4 h-4 text-primary" />
+                    <div>
+                      <CardTitle>Recent Activity</CardTitle>
+                      <CardDescription className="text-xs">
+                        Latest payments and invoices
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {invoices.length > 0 ? invoices.map((invoice) => (
+                      <div
+                        key={invoice.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <FileText className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground text-sm">
+                              {invoice.customer_name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Invoice #{invoice.invoice_number}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-foreground">
-                            {invoice.customer_name}
+                        <div className="text-right">
+                          <p className="font-semibold text-foreground text-sm">
+                            KSh {Number(invoice.amount).toLocaleString()}
                           </p>
-                          <p className="text-sm text-muted-foreground">
-                            Invoice #{invoice.invoice_number}
-                          </p>
+                          <div className="flex items-center gap-2 justify-end">
+                            <Badge 
+                              variant={invoice.status === 'paid' ? 'default' : 'secondary'}
+                              className={cn(
+                                "text-xs",
+                                invoice.status === 'paid' && "bg-success text-success-foreground"
+                              )}
+                            >
+                              {invoice.status}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDate(invoice.created_at)}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-foreground">
-                          KSh {Number(invoice.amount).toLocaleString()}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <Badge 
-                            variant={invoice.status === 'paid' ? 'default' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {invoice.status}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(invoice.created_at)}
-                          </span>
-                        </div>
+                    )) : (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                        <p className="font-medium">No invoices yet</p>
+                        <p className="text-xs mt-1">Create your first invoice to get started</p>
                       </div>
-                    </div>
-                  )) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                      <p>No invoices yet</p>
-                      <p className="text-sm">Create your first invoice to get started</p>
-                    </div>
+                    )}
+                  </div>
+                  {invoices.length > 0 && (
+                    <Button variant="outline" className="w-full mt-4">
+                      View All Activity
+                    </Button>
                   )}
-                </div>
-                <Button variant="outline" className="w-full mt-4">
-                  View All Activity
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            </div>
 
-          {/* Quick Actions */}
-          <div className="space-y-6">
-            <Card className="border-0 bg-gradient-elegant shadow-medium">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Quick Actions</CardTitle>
-                <CardDescription>
-                  Common tasks to manage your business
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <CreateInvoiceDialog onInvoiceCreated={fetchUserData} />
-                <Button className="w-full justify-start" variant="outline">
-                  <Users className="w-4 h-4 mr-2" />
-                  Add Customer
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <FileText className="w-4 h-4 mr-2" />
-                  View Reports
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Payment History
-                </Button>
-              </CardContent>
-            </Card>
+            {/* Quick Actions & Payment Methods */}
+            <div className="space-y-6">
+              <Card className="border border-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Quick Actions</CardTitle>
+                  <CardDescription className="text-xs">
+                    Common business tasks
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <CreateInvoiceDialog onInvoiceCreated={fetchUserData} />
+                  <Button className="w-full justify-start" variant="outline" size="sm">
+                    <Users className="w-4 h-4 mr-2" />
+                    Add Customer
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline" size="sm">
+                    <FileText className="w-4 h-4 mr-2" />
+                    View Reports
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline" size="sm">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Payment History
+                  </Button>
+                </CardContent>
+              </Card>
 
-            {/* Payment Methods Status */}
-            <Card className="border-0 bg-gradient-elegant shadow-medium">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Payment Methods</CardTitle>
-                <CardDescription>
-                  Your connected payment options
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">M-Pesa Paybill</span>
-                  <Badge variant={paymentMethods?.mpesa_paybill ? "default" : "secondary"} 
-                         className={paymentMethods?.mpesa_paybill ? "bg-success text-success-foreground" : ""}>
-                    {paymentMethods?.mpesa_paybill ? 'Active' : 'Not Connected'}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">M-Pesa Till</span>
-                  <Badge variant={paymentMethods?.mpesa_till ? "default" : "secondary"}
-                         className={paymentMethods?.mpesa_till ? "bg-success text-success-foreground" : ""}>
-                    {paymentMethods?.mpesa_till ? 'Active' : 'Not Connected'}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Airtel Money</span>
-                  <Badge variant={paymentMethods?.airtel_money ? "default" : "secondary"}
-                         className={paymentMethods?.airtel_money ? "bg-success text-success-foreground" : ""}>
-                    {paymentMethods?.airtel_money ? 'Active' : 'Not Connected'}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Card Payments</span>
-                  <Badge variant={paymentMethods?.enable_cards ? "default" : "secondary"}
-                         className={paymentMethods?.enable_cards ? "bg-success text-success-foreground" : ""}>
-                    {paymentMethods?.enable_cards ? 'Active' : 'Setup Required'}
-                  </Badge>
-                </div>
-                <PaymentMethodsDialog onPaymentMethodsUpdated={fetchUserData} />
-              </CardContent>
-            </Card>
+              <Card className="border border-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Payment Methods</CardTitle>
+                  <CardDescription className="text-xs">
+                    Connected payment options
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-foreground">M-Pesa Paybill</span>
+                    <Badge 
+                      variant={paymentMethods?.mpesa_paybill ? "default" : "secondary"} 
+                      className={cn(
+                        "text-xs",
+                        paymentMethods?.mpesa_paybill && "bg-success text-success-foreground"
+                      )}
+                    >
+                      {paymentMethods?.mpesa_paybill ? 'Active' : 'Setup'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-foreground">M-Pesa Till</span>
+                    <Badge 
+                      variant={paymentMethods?.mpesa_till ? "default" : "secondary"}
+                      className={cn(
+                        "text-xs",
+                        paymentMethods?.mpesa_till && "bg-success text-success-foreground"
+                      )}
+                    >
+                      {paymentMethods?.mpesa_till ? 'Active' : 'Setup'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-foreground">Airtel Money</span>
+                    <Badge 
+                      variant={paymentMethods?.airtel_money ? "default" : "secondary"}
+                      className={cn(
+                        "text-xs",
+                        paymentMethods?.airtel_money && "bg-success text-success-foreground"
+                      )}
+                    >
+                      {paymentMethods?.airtel_money ? 'Active' : 'Setup'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-foreground">Card Payments</span>
+                    <Badge 
+                      variant={paymentMethods?.enable_cards ? "default" : "secondary"}
+                      className={cn(
+                        "text-xs",
+                        paymentMethods?.enable_cards && "bg-success text-success-foreground"
+                      )}
+                    >
+                      {paymentMethods?.enable_cards ? 'Active' : 'Setup'}
+                    </Badge>
+                  </div>
+                  <PaymentMethodsDialog onPaymentMethodsUpdated={fetchUserData} />
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
-          </div>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+      </main>
+    </div>
   );
 };
 
