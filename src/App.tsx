@@ -10,6 +10,12 @@ import NotFound from "./pages/NotFound";
 import GetStarted from "./pages/onboarding/GetStarted";
 import SellerDashboard from "./pages/dashboard/SellerDashboard";
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
+import Invoices from "./pages/dashboard/Invoices";
+import Transactions from "./pages/dashboard/Transactions";
+import MpesaSetup from "./pages/dashboard/MpesaSetup";
+import ApiIntegrations from "./pages/dashboard/ApiIntegrations";
+import Subscription from "./pages/dashboard/Subscription";
+import Settings from "./pages/dashboard/Settings";
 import { AboutUs } from "./pages/about";
 import { ContactUs } from "./pages/contact";
 import { ApiDocs } from "./pages/docs";
@@ -33,6 +39,12 @@ const App = () => (
         <Routes>
           {/* Dashboard Routes - No Header/Footer */}
           <Route path="/dashboard" element={<SellerDashboard />} />
+          <Route path="/dashboard/invoices" element={<Invoices />} />
+          <Route path="/dashboard/transactions" element={<Transactions />} />
+          <Route path="/dashboard/mpesa-setup" element={<MpesaSetup />} />
+          <Route path="/dashboard/api" element={<ApiIntegrations />} />
+          <Route path="/dashboard/subscription" element={<Subscription />} />
+          <Route path="/dashboard/settings" element={<Settings />} />
           <Route path="/admin" element={<AdminDashboard />} />
           
           {/* Main Site Routes - With Header/Footer */}

@@ -30,18 +30,23 @@ const navigationItems = [
     icon: FileText,
   },
   {
-    title: 'Customers',
-    url: '/dashboard/customers',
-    icon: Users,
-  },
-  {
-    title: 'Payment Methods',
-    url: '/dashboard/payment-methods',
+    title: 'Transactions',
+    url: '/dashboard/transactions',
     icon: CreditCard,
   },
   {
-    title: 'Reports',
-    url: '/dashboard/reports',
+    title: 'M-PESA Setup',
+    url: '/dashboard/mpesa-setup',
+    icon: CreditCard,
+  },
+  {
+    title: 'API & Integrations',
+    url: '/dashboard/api',
+    icon: BarChart3,
+  },
+  {
+    title: 'Subscription',
+    url: '/dashboard/subscription',
     icon: BarChart3,
   },
 ];
@@ -51,11 +56,6 @@ const accountItems = [
     title: 'Settings',
     url: '/dashboard/settings',
     icon: Settings,
-  },
-  {
-    title: 'Help & Support',
-    url: '/dashboard/help',
-    icon: HelpCircle,
   },
 ];
 
