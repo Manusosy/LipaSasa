@@ -16,6 +16,7 @@ import MpesaSetup from "./pages/dashboard/MpesaSetup";
 import ApiIntegrations from "./pages/dashboard/ApiIntegrations";
 import Subscription from "./pages/dashboard/Subscription";
 import Settings from "./pages/dashboard/Settings";
+import PayInvoice from "./pages/pay/[invoiceId]";
 import { AboutUs } from "./pages/about";
 import { ContactUs } from "./pages/contact";
 import { ApiDocs } from "./pages/docs";
@@ -46,6 +47,7 @@ const App = () => (
           <Route path="/dashboard/subscription" element={<Subscription />} />
           <Route path="/dashboard/settings" element={<Settings />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/pay/:invoiceId" element={<PayInvoice />} />
           
           {/* Main Site Routes - With Header/Footer */}
           <Route path="/" element={<Layout><Index /></Layout>} />

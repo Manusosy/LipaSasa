@@ -16,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface MpesaCredentials {
   shortcode: string;
@@ -42,7 +42,6 @@ const MpesaSetup = () => {
   const [testing, setTesting] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     // Check authentication
@@ -74,11 +73,7 @@ const MpesaSetup = () => {
       }
     } catch (error) {
       console.error('Error fetching credentials:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load M-PESA credentials',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load M-PESA credentials');
     } finally {
       setLoading(false);
     }
@@ -106,38 +101,51 @@ const MpesaSetup = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: 'M-PESA credentials saved successfully',
-      });
+      toast.success('M-PESA credentials saved successfully');
       setHasExistingCredentials(true);
       setCredentials(prev => ({ ...prev, is_active: true }));
     } catch (error: any) {
       console.error('Error saving credentials:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save credentials',
-        variant: 'destructive',
-      });
+      toast.error(error.message || 'Failed to save credentials');
     } finally {
       setSaving(false);
     }
   };
 
   const handleTest = async () => {
+    if (!credentials.shortcode || !credentials.consumer_key || !credentials.consumer_secret || !credentials.passkey) {
+      toast.error('Please save your credentials first before testing');
+      return;
+    }
+
+    if (!credentials.nominated_phone) {
+      toast.error('Please enter a nominated phone number for testing');
+      return;
+    }
+
     setTesting(true);
+    toast.info('Sending test payment request to your phone...');
+    
     try {
-      // TODO: Implement STK Push test with 1 KES
-      toast({
-        title: 'Test Initiated',
-        description: 'Check your phone for STK Push prompt (1 KES)',
+      const { data, error } = await supabase.functions.invoke('mpesa-stk-push', {
+        body: {
+          phoneNumber: credentials.nominated_phone,
+          amount: 1,
+          description: 'LipaSasa M-PESA Connection Test',
+          isTest: true,
+        },
       });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success('Test payment sent! Check your phone and enter PIN. You will be charged KES 1.');
+      } else {
+        throw new Error(data.error || 'Test failed');
+      }
     } catch (error: any) {
-      toast({
-        title: 'Test Failed',
-        description: error.message || 'Connection test failed',
-        variant: 'destructive',
-      });
+      console.error('Test error:', error);
+      toast.error(error.message || 'Connection test failed. Please check your credentials.');
     } finally {
       setTesting(false);
     }

@@ -41,9 +41,9 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({ onInvo
       if (!user) throw new Error('Not authenticated');
 
       const invoiceNumber = generateInvoiceNumber();
-      const link = `${window.location.origin}/pay/${invoiceNumber}`;
 
-      const { error } = await supabase
+      // First create the invoice to get the ID
+      const { data: invoice, error } = await supabase
         .from('invoices')
         .insert({
           user_id: user.id,
@@ -52,11 +52,25 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({ onInvo
           customer_email: formData.customerEmail || null,
           amount: parseFloat(formData.amount),
           description: formData.description || null,
-          payment_link: link,
+          currency: 'KSH',
+          status: 'pending',
           expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Generate payment link with the invoice ID
+      const link = `${window.location.origin}/pay/${invoice.id}`;
+
+      // Update invoice with payment link
+      const { error: updateError } = await supabase
+        .from('invoices')
+        .update({ payment_link: link })
+        .eq('id', invoice.id);
+
+      if (updateError) throw updateError;
 
       setPaymentLink(link);
       onInvoiceCreated();
