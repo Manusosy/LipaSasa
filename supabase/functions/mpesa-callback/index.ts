@@ -30,6 +30,12 @@ serve(async (req) => {
   try {
     console.log('=== M-PESA Callback Received ===');
     
+    // SECURITY: Validate request origin
+    // In production, add IP whitelist for Safaricom IPs or signature verification
+    const origin = req.headers.get('origin');
+    const userAgent = req.headers.get('user-agent');
+    console.log('Request origin:', origin, 'User-Agent:', userAgent);
+    
     // Initialize Supabase client with service role key for server-side operations
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',

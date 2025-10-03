@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, CheckCircle2, XCircle, Phone, CreditCard } from "lucide-react";
+import { phoneNumberSchema } from "@/lib/validations";
 
 interface Invoice {
   id: string;
@@ -125,22 +126,24 @@ const PayInvoice = () => {
       return;
     }
 
-    // Validate phone number format
-    const cleanPhone = phoneNumber.replace(/[\s\-]/g, "");
-    if (!/^(254|0)[17]\d{8}$/.test(cleanPhone)) {
-      toast.error("Please enter a valid Kenyan phone number (e.g., 0712345678)");
+    // Validate phone number using Zod schema
+    const phoneValidation = phoneNumberSchema.safeParse(phoneNumber.trim());
+    if (!phoneValidation.success) {
+      toast.error(phoneValidation.error.errors[0].message);
       return;
     }
 
     setProcessing(true);
     setPaymentStatus("pending");
+    
+    const validatedPhone = phoneValidation.data;
 
     try {
       // Call STK Push edge function
       const { data, error } = await supabase.functions.invoke("mpesa-stk-push", {
         body: {
           invoiceId: invoice.id,
-          phoneNumber: cleanPhone,
+          phoneNumber: validatedPhone,
           amount: invoice.amount,
           description: invoice.description || `Payment for ${invoice.invoice_number}`,
         },

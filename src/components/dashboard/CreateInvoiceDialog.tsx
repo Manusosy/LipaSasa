@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Copy, Check } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { createInvoiceSchema } from '@/lib/validations';
 
 interface CreateInvoiceDialogProps {
   onInvoiceCreated: () => void;
@@ -34,6 +35,25 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({ onInvo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate input with Zod
+    const validation = createInvoiceSchema.safeParse({
+      customer_name: formData.customerName,
+      customer_email: formData.customerEmail,
+      amount: parseFloat(formData.amount),
+      description: formData.description,
+      currency: 'KSH',
+    });
+
+    if (!validation.success) {
+      toast({
+        title: "Validation Error",
+        description: validation.error.errors[0].message,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {

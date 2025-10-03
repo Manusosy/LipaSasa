@@ -66,24 +66,34 @@
 - [ ] Implement encryption for mpesa_credentials table
 - [ ] Update edge functions to decrypt credentials
 - [ ] Migration script for existing data
+- **NOTE**: M-PESA credentials should be encrypted using Supabase Vault. This requires manual setup in production.
 
 ### 2.2 Admin Roles & Permissions
-- [ ] Create `app_role` enum (admin, merchant, user)
-- [ ] Create `user_roles` table with RLS
-- [ ] Create `has_role()` security definer function
-- [ ] Update RLS policies to use role checks
-- [ ] Seed initial admin user
+- [x] Create `app_role` enum (admin, merchant, user)
+- [x] Create `user_roles` table with RLS
+- [x] Create `has_role()` security definer function
+- [x] Update RLS policies to use role checks
+- [x] Assign 'merchant' role by default on user signup
+- [ ] Seed initial admin user (requires manual SQL: `INSERT INTO user_roles (user_id, role) VALUES ('<admin_user_id>', 'admin')`)
 
 ### 2.3 Input Validation
-- [ ] Add Zod schemas for all forms
-- [ ] Validate phone numbers (254 format)
-- [ ] Sanitize user inputs
-- [ ] Add rate limiting to edge functions
+- [x] Add Zod schemas for all forms
+- [x] Validate phone numbers (254 format)
+- [x] Sanitize user inputs (trim, max length)
+- [x] Add validation to CreateInvoiceDialog
+- [x] Add validation to MpesaSetup form
+- [x] Add validation to payment page
+- [ ] Add rate limiting to edge functions (requires Supabase Edge Function rate limiting configuration)
 
 ### 2.4 Fix Auth Security Warnings
-- [ ] Update OTP expiry settings in Supabase dashboard
-- [ ] Enable leaked password protection
-- [ ] Review and update password policies
+- [ ] Update OTP expiry settings in Supabase dashboard (https://supabase.com/dashboard/project/qafcuihpszmexfpxnyax/settings/auth)
+- [ ] Enable leaked password protection (https://supabase.com/dashboard/project/qafcuihpszmexfpxnyax/settings/auth)
+- [ ] Upgrade Postgres version (https://supabase.com/dashboard/project/qafcuihpszmexfpxnyax/settings/infrastructure)
+
+### 2.5 Webhook Security
+- [x] Add request origin logging to mpesa-callback
+- [ ] Implement IP whitelist for Safaricom callback IPs (production requirement)
+- [ ] Add signature verification for callbacks (optional, Safaricom-specific)
 
 ---
 

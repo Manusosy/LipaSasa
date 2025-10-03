@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { mpesaCredentialsSchema } from '@/lib/validations';
 
 interface MpesaCredentials {
   shortcode: string;
@@ -81,6 +82,21 @@ const MpesaSetup = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate credentials with Zod
+    const validation = mpesaCredentialsSchema.safeParse({
+      consumer_key: credentials.consumer_key,
+      consumer_secret: credentials.consumer_secret,
+      shortcode: credentials.shortcode,
+      passkey: credentials.passkey,
+      nominated_phone: credentials.nominated_phone,
+    });
+
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
+    
     setSaving(true);
 
     try {
