@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { CreateInvoiceDialog } from '@/components/dashboard/CreateInvoiceDialog';
 import { PaymentMethodsDialog } from '@/components/dashboard/PaymentMethodsDialog';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
+import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import { User, Session } from '@supabase/supabase-js';
 import { cn } from '@/lib/utils';
 
@@ -201,10 +202,7 @@ const SellerDashboard = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
-              </Button>
+              <NotificationBell />
               <CreateInvoiceDialog onInvoiceCreated={fetchUserData} />
             </div>
           </div>
@@ -389,55 +387,66 @@ const SellerDashboard = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-foreground">M-Pesa Paybill</span>
-                    <Badge 
-                      variant={paymentMethods?.mpesa_paybill ? "default" : "secondary"} 
-                      className={cn(
-                        "text-xs",
-                        paymentMethods?.mpesa_paybill && "bg-success text-success-foreground"
-                      )}
-                    >
-                      {paymentMethods?.mpesa_paybill ? 'Active' : 'Setup'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-foreground">M-Pesa Till</span>
-                    <Badge 
-                      variant={paymentMethods?.mpesa_till ? "default" : "secondary"}
-                      className={cn(
-                        "text-xs",
-                        paymentMethods?.mpesa_till && "bg-success text-success-foreground"
-                      )}
-                    >
-                      {paymentMethods?.mpesa_till ? 'Active' : 'Setup'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-foreground">Airtel Money</span>
-                    <Badge 
-                      variant={paymentMethods?.airtel_money ? "default" : "secondary"}
-                      className={cn(
-                        "text-xs",
-                        paymentMethods?.airtel_money && "bg-success text-success-foreground"
-                      )}
-                    >
-                      {paymentMethods?.airtel_money ? 'Active' : 'Setup'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-foreground">Card Payments</span>
-                    <Badge 
-                      variant={paymentMethods?.enable_cards ? "default" : "secondary"}
-                      className={cn(
-                        "text-xs",
-                        paymentMethods?.enable_cards && "bg-success text-success-foreground"
-                      )}
-                    >
-                      {paymentMethods?.enable_cards ? 'Active' : 'Setup'}
-                    </Badge>
-                  </div>
-                  <PaymentMethodsDialog onPaymentMethodsUpdated={fetchUserData} />
+                  <PaymentMethodsDialog onPaymentMethodsUpdated={fetchUserData}>
+                    <div className="space-y-3">
+                      <button 
+                        className="w-full flex items-center justify-between text-sm hover:bg-muted/50 p-2 rounded-lg transition-colors"
+                      >
+                        <span className="font-medium text-foreground">M-Pesa Paybill</span>
+                        <Badge 
+                          variant={paymentMethods?.mpesa_paybill ? "default" : "secondary"} 
+                          className={cn(
+                            "text-xs cursor-pointer",
+                            paymentMethods?.mpesa_paybill && "bg-success text-success-foreground"
+                          )}
+                        >
+                          {paymentMethods?.mpesa_paybill ? 'Active' : 'Setup'}
+                        </Badge>
+                      </button>
+                      <button 
+                        className="w-full flex items-center justify-between text-sm hover:bg-muted/50 p-2 rounded-lg transition-colors"
+                      >
+                        <span className="font-medium text-foreground">M-Pesa Till</span>
+                        <Badge 
+                          variant={paymentMethods?.mpesa_till ? "default" : "secondary"}
+                          className={cn(
+                            "text-xs cursor-pointer",
+                            paymentMethods?.mpesa_till && "bg-success text-success-foreground"
+                          )}
+                        >
+                          {paymentMethods?.mpesa_till ? 'Active' : 'Setup'}
+                        </Badge>
+                      </button>
+                      <button 
+                        className="w-full flex items-center justify-between text-sm hover:bg-muted/50 p-2 rounded-lg transition-colors"
+                      >
+                        <span className="font-medium text-foreground">Airtel Money</span>
+                        <Badge 
+                          variant={paymentMethods?.airtel_money ? "default" : "secondary"}
+                          className={cn(
+                            "text-xs cursor-pointer",
+                            paymentMethods?.airtel_money && "bg-success text-success-foreground"
+                          )}
+                        >
+                          {paymentMethods?.airtel_money ? 'Active' : 'Setup'}
+                        </Badge>
+                      </button>
+                      <button 
+                        className="w-full flex items-center justify-between text-sm hover:bg-muted/50 p-2 rounded-lg transition-colors"
+                      >
+                        <span className="font-medium text-foreground">Card Payments</span>
+                        <Badge 
+                          variant={paymentMethods?.enable_cards ? "default" : "secondary"}
+                          className={cn(
+                            "text-xs cursor-pointer",
+                            paymentMethods?.enable_cards && "bg-success text-success-foreground"
+                          )}
+                        >
+                          {paymentMethods?.enable_cards ? 'Active' : 'Setup'}
+                        </Badge>
+                      </button>
+                    </div>
+                  </PaymentMethodsDialog>
                 </CardContent>
               </Card>
             </div>

@@ -19,7 +19,7 @@ interface PaymentMethods {
   enable_cards: boolean;
 }
 
-export const PaymentMethodsDialog: React.FC<PaymentMethodsDialogProps> = ({ onPaymentMethodsUpdated }) => {
+export const PaymentMethodsDialog: React.FC<PaymentMethodsDialogProps & { children?: React.ReactNode }> = ({ onPaymentMethodsUpdated, children }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethods>({
@@ -107,10 +107,12 @@ export const PaymentMethodsDialog: React.FC<PaymentMethodsDialogProps> = ({ onPa
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full">
-          <CreditCard className="w-4 h-4 mr-2" />
-          Manage Payment Methods
-        </Button>
+        {children || (
+          <Button variant="outline" size="sm" className="w-full">
+            <CreditCard className="w-4 h-4 mr-2" />
+            Manage Payment Methods
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

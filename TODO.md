@@ -53,6 +53,15 @@
 - [x] Update `src/components/dashboard/CreateInvoiceDialog.tsx`
   - [x] Generate proper payment links
   - [x] Add "Copy Link" and "Send to Customer" buttons
+  - [x] Validate payment methods are configured before invoice creation
+- [x] Dashboard Payment Methods Section
+  - [x] Make setup buttons functional (clickable to open payment methods dialog)
+  - [x] Improve UX for payment method configuration
+- [x] Notification System
+  - [x] Create NotificationBell component
+  - [x] Real-time payment notifications
+  - [x] Transaction status updates
+  - [x] Unread count indicator
 - [ ] Update `src/pages/dashboard/Invoices.tsx`
   - [ ] Add "Send Payment Link" action
   - [ ] Show real-time payment status updates

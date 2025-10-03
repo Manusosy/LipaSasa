@@ -60,6 +60,30 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({ onInvo
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Check if user has configured any payment method
+      const { data: paymentMethods } = await supabase
+        .from('payment_methods')
+        .select('mpesa_paybill, mpesa_till, airtel_money, enable_cards')
+        .eq('user_id', user.id)
+        .single();
+
+      const hasPaymentMethod = paymentMethods && (
+        paymentMethods.mpesa_paybill || 
+        paymentMethods.mpesa_till || 
+        paymentMethods.airtel_money || 
+        paymentMethods.enable_cards
+      );
+
+      if (!hasPaymentMethod) {
+        toast({
+          title: "Payment Method Required",
+          description: "Please set up at least one payment method before creating an invoice. Go to Payment Methods to configure.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const invoiceNumber = generateInvoiceNumber();
 
       // First create the invoice to get the ID
