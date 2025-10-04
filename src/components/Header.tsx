@@ -1,13 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { CreditCard, Menu, X } from 'lucide-react';
+import { CreditCard, Menu, X, LogOut, LayoutDashboard } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   onNavClick?: (section: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ onNavClick }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const navigationItems = [
     { name: 'Features', id: 'features' },
@@ -17,6 +38,17 @@ export const Header: React.FC<HeaderProps> = ({ onNavClick }) => {
 
   const handleNavClick = (sectionId: string) => {
     onNavClick?.(sectionId);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleDashboard = () => {
+    navigate('/dashboard');
     setIsMobileMenuOpen(false);
   };
 
@@ -48,21 +80,44 @@ export const Header: React.FC<HeaderProps> = ({ onNavClick }) => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              onClick={() => window.location.href = '/auth'}
-              className="font-medium"
-            >
-              Sign In
-            </Button>
-            <Button
-              variant="hero"
-              size="lg"
-              onClick={() => window.location.href = '/get-started'}
-              className="font-semibold"
-            >
-              Get Started
-            </Button>
+            {user ? (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={handleDashboard}
+                  className="font-medium"
+                >
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleSignOut}
+                  className="font-medium"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate('/auth')}
+                  className="font-medium"
+                >
+                  Sign In
+                </Button>
+                <Button
+                  variant="hero"
+                  size="lg"
+                  onClick={() => navigate('/get-started')}
+                  className="font-semibold"
+                >
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -94,20 +149,43 @@ export const Header: React.FC<HeaderProps> = ({ onNavClick }) => {
                 </button>
               ))}
               <div className="flex flex-col space-y-3 pt-4 border-t border-border">
-                <Button
-                  variant="ghost"
-                  onClick={() => window.location.href = '/auth'}
-                  className="justify-start font-medium"
-                >
-                  Sign In
-                </Button>
-                <Button
-                  variant="hero"
-                  onClick={() => window.location.href = '/get-started'}
-                  className="font-semibold"
-                >
-                  Get Started
-                </Button>
+                {user ? (
+                  <>
+                    <Button
+                      variant="ghost"
+                      onClick={handleDashboard}
+                      className="justify-start font-medium"
+                    >
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleSignOut}
+                      className="justify-start font-medium"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="ghost"
+                      onClick={() => navigate('/auth')}
+                      className="justify-start font-medium"
+                    >
+                      Sign In
+                    </Button>
+                    <Button
+                      variant="hero"
+                      onClick={() => navigate('/get-started')}
+                      className="font-semibold"
+                    >
+                      Get Started
+                    </Button>
+                  </>
+                )}
               </div>
             </nav>
           </div>
