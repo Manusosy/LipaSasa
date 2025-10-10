@@ -2,7 +2,7 @@ import React from 'react';
 import { HeroSection } from '@/components/HeroSection';
 import { StatsSection } from '@/components/StatsSection';
 import { FeaturesSection } from '@/components/FeaturesSection';
-import { PricingSection } from '@/components/PricingSection';
+// PricingSection moved to /pricing page
 import { SEOHead } from '@/components/SEOHead';
 
 const Index = () => {
@@ -32,7 +32,7 @@ const Index = () => {
       <HeroSection onGetStarted={handleGetStarted} onLearnMore={handleLearnMore} />
       <StatsSection />
       <FeaturesSection />
-      <PricingSection />
+      {/* Pricing moved to dedicated /pricing page */}
     </>
   );
 };

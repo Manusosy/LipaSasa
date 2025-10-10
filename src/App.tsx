@@ -32,7 +32,9 @@ import { TermsOfService } from "./pages/terms";
 import { PrivacyPolicy } from "./pages/privacy";
 import { AuthPage } from "./pages/auth";
 import { VerifyOTP } from "./pages/auth/VerifyOTP";
+import { AdminAuth } from "./pages/auth/AdminAuth";
 import { FinancialSettings } from "./pages/dashboard/admin/FinancialSettings";
+import { PricingPage } from "./pages/pricing";
 
 const queryClient = new QueryClient();
 
@@ -71,7 +73,9 @@ const App = () => (
           <Route path="/status" element={<Layout><SystemStatus /></Layout>} />
           <Route path="/terms" element={<Layout><TermsOfService /></Layout>} />
           <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
+          <Route path="/pricing" element={<Layout><PricingPage /></Layout>} />
           <Route path="/auth" element={<Layout><AuthPage /></Layout>} />
+          <Route path="/admin/auth" element={<AdminAuth />} />
           <Route path="/verify-otp" element={<Layout><VerifyOTP /></Layout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<Layout><NotFound /></Layout>} />

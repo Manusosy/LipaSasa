@@ -58,7 +58,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavClick }) => {
   const productLinks = [
     { 
       name: 'Pricing & Features', 
-      href: '/#pricing',
+      href: '/pricing',
       description: 'Plans, features, and transparent pricing',
       icon: FileText 
     },

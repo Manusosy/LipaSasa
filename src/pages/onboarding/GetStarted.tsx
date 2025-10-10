@@ -89,7 +89,7 @@ const GetStarted = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const totalSteps = 4;
+  const totalSteps = 3; // Removed payment setup step - will be done in dashboard
 
   const updateOnboardingData = (stepData: Partial<OnboardingData>) => {
     setOnboardingData(prev => ({ ...prev, ...stepData }));
@@ -182,15 +182,6 @@ const GetStarted = () => {
         );
       case 2:
         return (
-          <PaymentSetupStep
-            data={onboardingData.paymentMethods}
-            onUpdate={(paymentMethods) => updateOnboardingData({ paymentMethods })}
-            onNext={nextStep}
-            onBack={prevStep}
-          />
-        );
-      case 3:
-        return (
           <PlanSelectionStep
             selectedPlan={onboardingData.selectedPlan}
             onUpdate={(selectedPlan) => updateOnboardingData({ selectedPlan })}
@@ -198,7 +189,7 @@ const GetStarted = () => {
             onBack={prevStep}
           />
         );
-      case 4:
+      case 3:
         return (
           <ReviewStep
             data={onboardingData}
@@ -213,16 +204,27 @@ const GetStarted = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Welcome to LipaSasa
-          </h1>
-          <p className="text-muted-foreground">
-            Let's set up your account in just a few steps
-          </p>
-        </div>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background with overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-primary/5" />
+      
+      <div className="relative z-10 min-h-screen flex">
+        {/* Left Side - Form */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+          <div className="w-full max-w-md">
+            <div className="mb-8">
+              <img 
+                src="/chapapay-logo.png" 
+                alt="LipaSasa Logo"
+                className="h-12 w-auto mb-6" 
+              />
+              <h1 className="text-3xl font-bold text-foreground mb-2">
+                Get Started with LipaSasa
+              </h1>
+              <p className="text-muted-foreground">
+                Create your account and start accepting payments in minutes
+              </p>
+            </div>
 
         {showOAuthOption && currentStep === 1 && (
           <Card className="mb-6 shadow-elegant border-0">
@@ -294,13 +296,51 @@ const GetStarted = () => {
           </>
         )}
 
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          <p>
-            Already have an account?{' '}
-            <a href="/auth" className="text-primary hover:underline font-medium">
-              Sign in here
-            </a>
-          </p>
+            <div className="mt-6 text-center text-sm text-muted-foreground">
+              <p>
+                Already have an account?{' '}
+                <a href="/auth" className="text-primary hover:underline font-medium">
+                  Sign in here
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side - Image */}
+        <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary to-secondary">
+          <div className="absolute inset-0 bg-black/10" />
+          <div 
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: `url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=2070')`,
+              opacity: 0.3
+            }}
+          />
+          <div className="relative z-10 flex flex-col items-center justify-center p-12 text-white">
+            <div className="max-w-md text-center">
+              <h2 className="text-4xl font-bold mb-6">
+                Start Accepting Payments Today
+              </h2>
+              <p className="text-xl text-white/90 mb-8">
+                Join thousands of businesses using LipaSasa to accept M-Pesa, bank transfers, and card payments seamlessly.
+              </p>
+              <div className="grid grid-cols-2 gap-4 text-left">
+                {[
+                  '✓ M-Pesa Integration',
+                  '✓ Instant Notifications',
+                  '✓ Professional Invoices',
+                  '✓ Secure Payments',
+                  '✓ Payment Links',
+                  '✓ 24/7 Support'
+                ].map((feature, idx) => (
+                  <div key={idx} className="text-sm font-medium">
+                    {feature}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

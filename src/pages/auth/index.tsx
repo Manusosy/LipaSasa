@@ -105,19 +105,35 @@ export const AuthPage = () => {
 
 
   return (
-    <div className="min-h-screen gradient-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
+      {/* Background Image with Overlay */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=2070')`,
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/80 to-secondary/90" />
+      
+      {/* Pattern Overlay */}
+      <div 
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}
+      />
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <img 
             src="/chapapay-logo.png" 
             alt="LipaSasa Logo"
-            className="h-16 w-auto mx-auto mb-4" 
+            className="h-16 w-auto mx-auto mb-4 drop-shadow-lg" 
           />
-          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to LipaSasa</h1>
-          <p className="text-muted-foreground">Sign in to your account or create a new one</p>
+          <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-md">Welcome to LipaSasa</h1>
+          <p className="text-white/90 drop-shadow">Sign in to your account or create a new one</p>
         </div>
 
-        <Card className="gradient-card shadow-elegant">
+        <Card className="shadow-2xl backdrop-blur-sm bg-white/95 border-0">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
@@ -180,7 +196,7 @@ export const AuthPage = () => {
                   <Separator className="w-full" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-muted-foreground">Or continue with</span>
+                  <span className="bg-white/95 px-2 text-muted-foreground">Or continue with</span>
                 </div>
               </div>
 
