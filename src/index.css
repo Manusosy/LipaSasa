@@ -1,0 +1,253 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* LipaSasa FinTech Design System - Professional, trustworthy, modern */
+
+@layer base {
+  :root {
+    /* Core Background Colors */
+    --background: 240 10% 98%;
+    --foreground: 215 25% 17%;
+
+    /* Card Components */
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 17%;
+
+    /* Popover Components */
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 17%;
+
+    /* Primary Brand Color - LipaSasa Teal */
+    --primary: 179 100% 35%;      /* #00b4b0 */
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 179 100% 45%;
+    --primary-glow: 179 100% 55%;
+
+    /* Success - Financial Green */
+    --success: 142 69% 48%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 142 69% 58%;
+
+    /* Warning - Pending Orange */
+    --warning: 43 96% 56%;
+    --warning-foreground: 215 25% 17%;
+    --warning-light: 43 96% 70%;
+
+    /* Secondary/Muted Colors */
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 215 25% 17%;
+
+    /* Muted Colors */
+    --muted: 217 32% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Accent Colors */
+    --accent: 217 32% 96%;
+    --accent-foreground: 215 25% 17%;
+
+    /* Destructive Colors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Border & Input */
+    --border: 217 32% 89%;
+    --input: 217 32% 89%;
+    --ring: 217 91% 24%;
+
+    /* FinTech Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(var(--success-light)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 50%, hsl(var(--primary-glow)) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(217 32% 98%) 100%);
+
+    /* Professional Shadows */
+    --shadow-soft: 0 1px 3px 0 hsl(var(--primary) / 0.1), 0 1px 2px 0 hsl(var(--primary) / 0.06);
+    --shadow-medium: 0 4px 6px -1px hsl(var(--primary) / 0.1), 0 2px 4px -1px hsl(var(--primary) / 0.06);
+    --shadow-large: 0 10px 15px -3px hsl(var(--primary) / 0.1), 0 4px 6px -2px hsl(var(--primary) / 0.05);
+    --shadow-glow: 0 0 0 1px hsl(var(--primary-glow) / 0.3), 0 0 20px hsl(var(--primary-glow) / 0.2);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --radius: 0.75rem;
+
+    /* Sidebar Colors */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 20% 45%;
+    --sidebar-primary: 179 100% 35%;  /* #00b4b0 */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 179 100% 96%;
+    --sidebar-accent-foreground: 179 100% 35%;
+    --sidebar-border: 217 20% 90%;
+    --sidebar-ring: 179 100% 35%;
+  }
+
+  .dark {
+    /* Core Background Colors */
+    --background: 215 28% 8%;
+    --foreground: 0 0% 95%;
+
+    /* Card Components */
+    --card: 215 28% 10%;
+    --card-foreground: 0 0% 95%;
+
+    /* Popover Components */
+    --popover: 215 28% 10%;
+    --popover-foreground: 0 0% 95%;
+
+    /* Primary Brand - Professional Blue */
+    --primary: 217 91% 60%;
+    --primary-foreground: 215 28% 8%;
+    --primary-light: 217 91% 70%;
+    --primary-glow: 217 91% 80%;
+
+    /* Success - Financial Green */
+    --success: 142 69% 58%;
+    --success-foreground: 215 28% 8%;
+    --success-light: 142 69% 68%;
+
+    /* Warning - Pending Orange */
+    --warning: 43 96% 70%;
+    --warning-foreground: 215 28% 8%;
+
+    /* Secondary Colors */
+    --secondary: 215 28% 15%;
+    --secondary-foreground: 0 0% 90%;
+
+    /* Muted Colors */
+    --muted: 215 28% 15%;
+    --muted-foreground: 215 20% 65%;
+
+    /* Accent Colors */
+    --accent: 215 28% 15%;
+    --accent-foreground: 0 0% 90%;
+
+    /* Destructive Colors */
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 95%;
+
+    /* Border & Input */
+    --border: 215 28% 20%;
+    --input: 215 28% 20%;
+    --ring: 217 91% 60%;
+
+    /* Sidebar Colors */
+    --sidebar-background: 215 28% 8%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 215 28% 8%;
+    --sidebar-accent: 215 28% 15%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 215 28% 20%;
+    --sidebar-ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  /* FinTech Component Styles */
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-success {
+    background: var(--gradient-success);
+  }
+
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-medium {
+    box-shadow: var(--shadow-medium);
+  }
+
+  .shadow-large {
+    box-shadow: var(--shadow-large);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+
+  .transition-bounce {
+    transition: var(--transition-bounce);
+  }
+
+  .scale-102 {
+    --tw-scale-x: 1.02;
+    --tw-scale-y: 1.02;
+    transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+  }
+
+  /* Custom FinTech animations */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+  }
+
+  .hero-gradient {
+    background: radial-gradient(
+      circle at top right,
+      rgba(0, 180, 176, 0.05) 0%,
+      rgba(0, 51, 161, 0.05) 25%,
+      transparent 50%
+    );
+  }
+
+  .hero-glow {
+    background: radial-gradient(
+      circle at 50% 50%,
+      rgba(0, 180, 176, 0.08),
+      rgba(0, 51, 161, 0.08) 50%,
+      transparent 100%
+    );
+  }
+
+  .gradient-background {
+    background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
+  }
+
+  .gradient-subtle {
+    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.3) 100%);
+  }
+
+  .gradient-elegant {
+    background: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(217 32% 98%) 100%);
+  }
+}
