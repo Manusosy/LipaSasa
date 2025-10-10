@@ -12,10 +12,15 @@ import { User, Session } from '@supabase/supabase-js';
 const ALLOWED_DOMAIN = 'kazinikazi.co.ke';
 
 export const AdminAuth = () => {
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [repeatPassword, setRepeatPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const navigate = useNavigate();
@@ -74,10 +79,101 @@ export const AdminAuth = () => {
     return emailDomain === ALLOWED_DOMAIN;
   };
 
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    // Validate domain
+    if (!validateEmail(email)) {
+      setError('Invalid email address. Please check your credentials.');
+      setLoading(false);
+      return;
+    }
+
+    // Validate password match
+    if (password !== repeatPassword) {
+      setError('Passwords do not match.');
+      setLoading(false);
+      return;
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      setLoading(false);
+      return;
+    }
+
+    // Validate required fields
+    if (!fullName || !phoneNumber) {
+      setError('All fields are required.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Create the admin user
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            phone: phoneNumber,
+          },
+        },
+      });
+
+      if (signUpError) {
+        setError('Failed to create admin account. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        // Create admin role entry
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: data.user.id,
+            role: 'admin',
+          });
+
+        if (roleError) {
+          console.error('Failed to assign admin role:', roleError);
+          setError('Account created but admin role assignment failed. Contact support.');
+          setLoading(false);
+          return;
+        }
+
+        setSuccess('Admin account created successfully! You can now sign in.');
+        // Clear form and switch to sign in
+        setTimeout(() => {
+          setIsSignUp(false);
+          setEmail('');
+          setPassword('');
+          setRepeatPassword('');
+          setFullName('');
+          setPhoneNumber('');
+          setSuccess('');
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('Signup error:', err);
+      setError('An unexpected error occurred. Please try again.');
+      setLoading(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
 
     // Validate domain without revealing it in the error message
     if (!validateEmail(email)) {
@@ -155,62 +251,193 @@ export const AdminAuth = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
               <Lock className="h-5 w-5 text-red-400" />
-              Secure Sign In
+              {isSignUp ? 'Create Admin Account' : 'Secure Sign In'}
             </CardTitle>
             <CardDescription className="text-white/60">
-              Enter your authorized credentials
+              {isSignUp ? 'Register a new administrator account' : 'Enter your authorized credentials'}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSignIn} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="admin-email" className="text-white/90">Email Address</Label>
-                <Input
-                  id="admin-email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="admin-password" className="text-white/90">Password</Label>
-                <Input
-                  id="admin-password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
-                  required
-                />
-              </div>
-              
-              {error && (
-                <Alert variant="destructive" className="bg-red-900/50 border-red-500/50 text-red-200">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-red-600 hover:bg-red-700 text-white" 
-                disabled={loading}
-              >
-                {loading ? 'Authenticating...' : 'Sign In'}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+            {!isSignUp ? (
+              // SIGN IN FORM
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-email" className="text-white/90">Email Address</Label>
+                  <Input
+                    id="admin-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-password" className="text-white/90">Password</Label>
+                  <Input
+                    id="admin-password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+                    required
+                  />
+                </div>
+                
+                {error && (
+                  <Alert variant="destructive" className="bg-red-900/50 border-red-500/50 text-red-200">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
 
-              <div className="text-center mt-6">
-                <p className="text-xs text-white/40">
-                  This area is restricted to authorized administrators only.
-                  <br />
-                  All access attempts are logged.
-                </p>
-              </div>
-            </form>
+                {success && (
+                  <Alert className="bg-green-900/50 border-green-500/50 text-green-200">
+                    <AlertDescription>{success}</AlertDescription>
+                  </Alert>
+                )}
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-red-600 hover:bg-red-700 text-white" 
+                  disabled={loading}
+                >
+                  {loading ? 'Authenticating...' : 'Sign In'}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+
+                <div className="text-center mt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSignUp(true);
+                      setError('');
+                      setSuccess('');
+                    }}
+                    className="text-sm text-red-400 hover:text-red-300 underline"
+                  >
+                    Need to create an admin account?
+                  </button>
+                </div>
+              </form>
+            ) : (
+              // SIGN UP FORM
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-fullname" className="text-white/90">Full Name</Label>
+                  <Input
+                    id="admin-fullname"
+                    type="text"
+                    placeholder="Enter full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="admin-phone" className="text-white/90">Phone Number</Label>
+                  <Input
+                    id="admin-phone"
+                    type="tel"
+                    placeholder="e.g., +254712345678"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="admin-signup-email" className="text-white/90">Email Address</Label>
+                  <Input
+                    id="admin-signup-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="admin-signup-password" className="text-white/90">Password</Label>
+                  <Input
+                    id="admin-signup-password"
+                    type="password"
+                    placeholder="At least 8 characters"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="admin-repeat-password" className="text-white/90">Repeat Password</Label>
+                  <Input
+                    id="admin-repeat-password"
+                    type="password"
+                    placeholder="Re-enter password"
+                    value={repeatPassword}
+                    onChange={(e) => setRepeatPassword(e.target.value)}
+                    className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+                    required
+                  />
+                </div>
+                
+                {error && (
+                  <Alert variant="destructive" className="bg-red-900/50 border-red-500/50 text-red-200">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+
+                {success && (
+                  <Alert className="bg-green-900/50 border-green-500/50 text-green-200">
+                    <AlertDescription>{success}</AlertDescription>
+                  </Alert>
+                )}
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-red-600 hover:bg-red-700 text-white" 
+                  disabled={loading}
+                >
+                  {loading ? 'Creating Account...' : 'Create Admin Account'}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+
+                <div className="text-center mt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSignUp(false);
+                      setError('');
+                      setSuccess('');
+                      setEmail('');
+                      setPassword('');
+                      setRepeatPassword('');
+                      setFullName('');
+                      setPhoneNumber('');
+                    }}
+                    className="text-sm text-red-400 hover:text-red-300 underline"
+                  >
+                    Already have an admin account?
+                  </button>
+                </div>
+              </form>
+            )}
+
+            <div className="text-center mt-6 pt-4 border-t border-slate-700/50">
+              <p className="text-xs text-white/40">
+                This area is restricted to authorized administrators only.
+                <br />
+                All access attempts are logged.
+              </p>
+            </div>
           </CardContent>
         </Card>
 
