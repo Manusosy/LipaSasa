@@ -108,11 +108,13 @@ export const AdminSidebar = ({ className = '' }: AdminSidebarProps) => {
       {/* Logo/Brand */}
       <div className="p-6 border-b border-white/10 relative">
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>
-          <img 
-            src="/favicon.ico" 
-            alt="LipaSasa Logo" 
-            className={`${collapsed ? 'h-10 w-10' : 'h-10 w-10'} rounded-lg`}
-          />
+          <div className={`${collapsed ? 'w-10 h-10' : 'w-10 h-10'} rounded-lg bg-white flex items-center justify-center shrink-0`}>
+            <img 
+              src="/chapapay.png" 
+              alt="LipaSasa" 
+              className="h-8 w-8 object-contain"
+            />
+          </div>
           {!collapsed && (
             <div>
               <h1 className="text-xl font-bold">LipaSasa</h1>

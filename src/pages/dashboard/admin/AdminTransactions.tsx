@@ -20,7 +20,15 @@ import {
   Clock,
   Loader2,
   Download,
+  Filter,
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { AdminSidebar } from '@/components/dashboard/AdminSidebar';
@@ -355,12 +363,20 @@ const AdminTransactions = () => {
           {/* Filters */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="text-base">Filter Transactions</CardTitle>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filter & Search
+                  </CardTitle>
+                  <CardDescription className="mt-1">Find specific transactions</CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                   <Input
                     placeholder="Search by receipt, phone, merchant, or ref..."
                     value={searchQuery}
@@ -368,18 +384,17 @@ const AdminTransactions = () => {
                     className="pl-10"
                   />
                 </div>
-                <div className="flex gap-2">
-                  {['all', 'completed', 'pending', 'failed'].map((status) => (
-                    <Button
-                      key={status}
-                      variant={statusFilter === status ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setStatusFilter(status)}
-                    >
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </Button>
-                  ))}
-                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>

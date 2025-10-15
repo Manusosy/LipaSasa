@@ -334,6 +334,166 @@ const SellerDashboard = () => {
             </Card>
           </div>
 
+          {/* Analytics Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {/* Invoice Status Distribution */}
+            <Card className="border border-border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Invoice Analytics</CardTitle>
+                <CardDescription className="text-xs">Status distribution</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {invoices.length > 0 ? (
+                  <div className="space-y-3">
+                    {(() => {
+                      const paidCount = invoices.filter(inv => inv.status === 'paid').length;
+                      const pendingCount = invoices.filter(inv => inv.status === 'pending').length;
+                      const failedCount = invoices.filter(inv => inv.status === 'failed').length;
+                      const total = invoices.length;
+                      
+                      return (
+                        <>
+                          <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-sm font-medium flex items-center gap-2">
+                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                                Paid
+                              </span>
+                              <span className="text-sm font-semibold">
+                                {paidCount} ({((paidCount / total) * 100).toFixed(0)}%)
+                              </span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2">
+                              <div
+                                className="bg-emerald-500 h-2 rounded-full transition-all"
+                                style={{ width: `${(paidCount / total) * 100}%` }}
+                              />
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-sm font-medium flex items-center gap-2">
+                                <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+                                Pending
+                              </span>
+                              <span className="text-sm font-semibold">
+                                {pendingCount} ({((pendingCount / total) * 100).toFixed(0)}%)
+                              </span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2">
+                              <div
+                                className="bg-amber-500 h-2 rounded-full transition-all"
+                                style={{ width: `${(pendingCount / total) * 100}%` }}
+                              />
+                            </div>
+                          </div>
+                          
+                          {failedCount > 0 && (
+                            <div>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-sm font-medium flex items-center gap-2">
+                                  <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                                  Failed
+                                </span>
+                                <span className="text-sm font-semibold">
+                                  {failedCount} ({((failedCount / total) * 100).toFixed(0)}%)
+                                </span>
+                              </div>
+                              <div className="w-full bg-muted rounded-full h-2">
+                                <div
+                                  className="bg-red-500 h-2 rounded-full transition-all"
+                                  style={{ width: `${(failedCount / total) * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Activity className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                    <p className="text-xs">No data yet</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Monthly Revenue Trend */}
+            <Card className="border border-border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Revenue Trend</CardTitle>
+                <CardDescription className="text-xs">Last 7 days</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {invoices.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="flex items-end justify-between gap-1 h-24">
+                      {(() => {
+                        const dailyRevenue: Record<number, number> = {};
+                        const today = new Date();
+                        
+                        invoices
+                          .filter(inv => inv.status === 'paid')
+                          .forEach(inv => {
+                            const invDate = new Date(inv.created_at);
+                            const daysDiff = Math.floor((today.getTime() - invDate.getTime()) / (1000 * 60 * 60 * 24));
+                            if (daysDiff < 7) {
+                              dailyRevenue[daysDiff] = (dailyRevenue[daysDiff] || 0) + Number(inv.amount);
+                            }
+                          });
+                        
+                        const maxRevenue = Math.max(...Object.values(dailyRevenue), 1);
+                        
+                        return Array.from({ length: 7 }).map((_, index) => {
+                          const dayRevenue = dailyRevenue[6 - index] || 0;
+                          const height = maxRevenue > 0 ? (dayRevenue / maxRevenue * 100) : 0;
+                          
+                          return (
+                            <div key={index} className="flex-1 flex flex-col items-center gap-1 h-full">
+                              <div className="w-full h-full flex items-end">
+                                <div 
+                                  className="w-full bg-primary rounded-t transition-all"
+                                  style={{ 
+                                    height: `${height}%`,
+                                    minHeight: dayRevenue > 0 ? '3px' : '0'
+                                  }}
+                                  title={`KES ${dayRevenue.toLocaleString()}`}
+                                />
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                    <div className="flex justify-between text-[10px] text-muted-foreground">
+                      {Array.from({ length: 7 }).map((_, i) => {
+                        const date = new Date();
+                        date.setDate(date.getDate() - (6 - i));
+                        return <span key={i}>{date.getDate()}</span>;
+                      })}
+                    </div>
+                    <div className="pt-2 border-t">
+                      <div className="text-center">
+                        <p className="text-xl font-bold text-foreground">
+                          KES {stats.monthlyRevenue.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">This month</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <TrendingUp className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                    <p className="text-xs">No revenue data</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             {/* Recent Activity */}

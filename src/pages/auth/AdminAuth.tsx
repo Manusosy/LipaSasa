@@ -281,11 +281,11 @@ export const AdminAuth = () => {
 
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/20 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-lg bg-white mb-4">
             <img 
-              src="/favicon.ico" 
-              alt="LipaSasa Logo" 
-              className="h-12 w-12 rounded-lg"
+              src="/chapapay.png" 
+              alt="LipaSasa" 
+              className="h-12 w-12 object-contain"
             />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-md">Admin Access</h1>

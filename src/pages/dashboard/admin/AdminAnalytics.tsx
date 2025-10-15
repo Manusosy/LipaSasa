@@ -9,6 +9,9 @@ import {
   Crown,
   CreditCard,
   Loader2,
+  ArrowUp,
+  ArrowDown,
+  Activity,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -27,10 +30,23 @@ interface Analytics {
   activeSubscriptions: number;
   pendingInvoices: number;
   paidInvoices: number;
+  completedTransactions: number;
+  failedTransactions: number;
   recentGrowth: {
     users: number;
     invoices: number;
     revenue: number;
+    transactions: number;
+  };
+  paymentMethodDistribution: {
+    mpesa: number;
+    paypal: number;
+    bank: number;
+  };
+  planDistribution: {
+    starter: number;
+    professional: number;
+    enterprise: number;
   };
 }
 
@@ -44,10 +60,23 @@ const AdminAnalytics = () => {
     activeSubscriptions: 0,
     pendingInvoices: 0,
     paidInvoices: 0,
+    completedTransactions: 0,
+    failedTransactions: 0,
     recentGrowth: {
       users: 0,
       invoices: 0,
       revenue: 0,
+      transactions: 0,
+    },
+    paymentMethodDistribution: {
+      mpesa: 0,
+      paypal: 0,
+      bank: 0,
+    },
+    planDistribution: {
+      starter: 0,
+      professional: 0,
+      enterprise: 0,
     },
   });
   const [loading, setLoading] = useState(true);
@@ -76,37 +105,70 @@ const AdminAnalytics = () => {
 
   const fetchAnalytics = async () => {
     try {
-      // Fetch all metrics in parallel
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      // Fetch all data in parallel
       const [
-        usersCount,
+        usersData,
         invoicesData,
         subscriptionsData,
         transactionsData,
         revenueData,
+        recentUsersData,
+        recentInvoicesData,
+        recentTransactionsData,
+        recentRevenueData,
       ] = await Promise.all([
         // Total users (exclude admins)
         supabase
           .from('profiles')
-          .select('*', { count: 'exact', head: true })
+          .select('*', { count: 'exact' })
           .neq('role', 'admin'),
 
         // Invoices
         supabase.from('invoices').select('*', { count: 'exact' }),
 
         // Subscriptions
-        supabase.from('subscriptions').select('*', { count: 'exact' }),
+        supabase.from('subscriptions').select('*'),
 
         // Transactions
-        supabase.from('transactions').select('*', { count: 'exact' }),
+        supabase.from('transactions').select('*'),
 
         // Revenue from completed transactions
         supabase
           .from('transactions')
           .select('amount')
           .eq('status', 'completed'),
+
+        // Recent users (30 days)
+        supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', thirtyDaysAgo.toISOString())
+          .neq('role', 'admin'),
+
+        // Recent invoices (30 days)
+        supabase
+          .from('invoices')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', thirtyDaysAgo.toISOString()),
+
+        // Recent transactions (30 days)
+        supabase
+          .from('transactions')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', thirtyDaysAgo.toISOString()),
+
+        // Recent revenue (30 days)
+        supabase
+          .from('transactions')
+          .select('amount')
+          .eq('status', 'completed')
+          .gte('created_at', thirtyDaysAgo.toISOString()),
       ]);
 
-      // Calculate totals
+      // Calculate metrics
       const totalRevenue = revenueData.data?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
       const activeSubscriptions = subscriptionsData.data?.filter(
         (s: any) => s.status === 'active'
@@ -117,48 +179,66 @@ const AdminAnalytics = () => {
       const paidInvoices = invoicesData.data?.filter(
         (i: any) => i.status === 'paid'
       ).length || 0;
+      const completedTransactions = transactionsData.data?.filter(
+        (t: any) => t.status === 'completed'
+      ).length || 0;
+      const failedTransactions = transactionsData.data?.filter(
+        (t: any) => t.status === 'failed'
+      ).length || 0;
 
-      // Calculate 30-day growth
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      // Payment method distribution
+      const mpesaCount = transactionsData.data?.filter(
+        (t: any) => t.payment_method === 'mpesa'
+      ).length || 0;
+      const paypalCount = transactionsData.data?.filter(
+        (t: any) => t.payment_method === 'paypal'
+      ).length || 0;
+      const bankCount = transactionsData.data?.filter(
+        (t: any) => t.payment_method === 'bank'
+      ).length || 0;
 
-      const [recentUsers, recentInvoices, recentRevenue] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', thirtyDaysAgo.toISOString())
-          .neq('role', 'admin'),
+      // Plan distribution
+      const starterCount = subscriptionsData.data?.filter(
+        (s: any) => s.plan_name?.toLowerCase().includes('starter')
+      ).length || 0;
+      const professionalCount = subscriptionsData.data?.filter(
+        (s: any) => s.plan_name?.toLowerCase().includes('professional')
+      ).length || 0;
+      const enterpriseCount = subscriptionsData.data?.filter(
+        (s: any) => s.plan_name?.toLowerCase().includes('enterprise')
+      ).length || 0;
 
-        supabase
-          .from('invoices')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', thirtyDaysAgo.toISOString()),
-
-        supabase
-          .from('transactions')
-          .select('amount')
-          .eq('status', 'completed')
-          .gte('created_at', thirtyDaysAgo.toISOString()),
-      ]);
-
-      const recentRevenueAmount = recentRevenue.data?.reduce(
+      const recentRevenueAmount = recentRevenueData.data?.reduce(
         (sum, t) => sum + (t.amount || 0),
         0
       ) || 0;
 
       setAnalytics({
-        totalUsers: usersCount.count || 0,
+        totalUsers: usersData.count || 0,
         totalInvoices: invoicesData.count || 0,
-        totalSubscriptions: subscriptionsData.count || 0,
-        totalTransactions: transactionsData.count || 0,
+        totalSubscriptions: subscriptionsData.data?.length || 0,
+        totalTransactions: transactionsData.data?.length || 0,
         totalRevenue,
         activeSubscriptions,
         pendingInvoices,
         paidInvoices,
+        completedTransactions,
+        failedTransactions,
         recentGrowth: {
-          users: recentUsers.count || 0,
-          invoices: recentInvoices.count || 0,
+          users: recentUsersData.count || 0,
+          invoices: recentInvoicesData.count || 0,
           revenue: recentRevenueAmount,
+          transactions: recentTransactionsData.count || 0,
+        },
+        paymentMethodDistribution: {
+          mpesa: mpesaCount,
+          paypal: paypalCount,
+          bank: bankCount,
+        },
+        planDistribution: {
+          starter: starterCount,
+          professional: professionalCount,
+          enterprise: enterpriseCount,
         },
       });
     } catch (error) {
@@ -177,7 +257,14 @@ const AdminAnalytics = () => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'KES',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const calculatePercentage = (value: number, total: number) => {
+    if (total === 0) return 0;
+    return ((value / total) * 100).toFixed(1);
   };
 
   if (loading) {
@@ -190,6 +277,14 @@ const AdminAnalytics = () => {
       </div>
     );
   }
+
+  const totalPayments = analytics.paymentMethodDistribution.mpesa + 
+    analytics.paymentMethodDistribution.paypal + 
+    analytics.paymentMethodDistribution.bank;
+
+  const totalPlans = analytics.planDistribution.starter + 
+    analytics.planDistribution.professional + 
+    analytics.planDistribution.enterprise;
 
   return (
     <div className="min-h-screen bg-background flex w-full">
@@ -229,9 +324,12 @@ const AdminAnalytics = () => {
                 </svg>
               </Button>
               <div>
-                <h1 className="text-lg lg:text-xl font-bold text-foreground">Analytics Dashboard</h1>
+                <h1 className="text-lg lg:text-xl font-bold text-foreground flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Analytics Dashboard
+                </h1>
                 <p className="text-xs text-muted-foreground hidden sm:block">
-                  Platform-wide metrics and insights
+                  Real-time platform metrics and insights
                 </p>
               </div>
             </div>
@@ -239,9 +337,9 @@ const AdminAnalytics = () => {
         </header>
 
         {/* Content */}
-        <div className="p-4 lg:p-6 max-w-7xl mx-auto">
+        <div className="p-4 lg:p-6 max-w-[1600px] mx-auto space-y-6">
           {/* Main KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -249,8 +347,9 @@ const AdminAnalytics = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{analytics.totalUsers}</div>
-                <p className="text-xs text-success">
-                  +{analytics.recentGrowth.users} in last 30 days
+                <p className="text-xs flex items-center gap-1 text-emerald-600 mt-1">
+                  <ArrowUp className="h-3 w-3" />
+                  +{analytics.recentGrowth.users} this month
                 </p>
               </CardContent>
             </Card>
@@ -262,7 +361,8 @@ const AdminAnalytics = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{formatCurrency(analytics.totalRevenue)}</div>
-                <p className="text-xs text-success">
+                <p className="text-xs flex items-center gap-1 text-emerald-600 mt-1">
+                  <ArrowUp className="h-3 w-3" />
                   +{formatCurrency(analytics.recentGrowth.revenue)} this month
                 </p>
               </CardContent>
@@ -275,30 +375,191 @@ const AdminAnalytics = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{analytics.totalInvoices}</div>
-                <p className="text-xs text-success">
-                  +{analytics.recentGrowth.invoices} in last 30 days
+                <p className="text-xs flex items-center gap-1 text-emerald-600 mt-1">
+                  <ArrowUp className="h-3 w-3" />
+                  +{analytics.recentGrowth.invoices} this month
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
+                <CardTitle className="text-sm font-medium">Transactions</CardTitle>
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{analytics.totalTransactions}</div>
-                <p className="text-xs text-muted-foreground">All payment attempts</p>
+                <p className="text-xs flex items-center gap-1 text-emerald-600 mt-1">
+                  <ArrowUp className="h-3 w-3" />
+                  +{analytics.recentGrowth.transactions} this month
+                </p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Secondary KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Payment Methods Distribution */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Payment Methods</CardTitle>
+                <CardDescription>Distribution by payment type</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                        M-PESA
+                      </span>
+                      <span className="text-sm font-bold">
+                        {analytics.paymentMethodDistribution.mpesa} ({calculatePercentage(analytics.paymentMethodDistribution.mpesa, totalPayments)}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2.5">
+                      <div
+                        className="bg-emerald-500 h-2.5 rounded-full transition-all"
+                        style={{
+                          width: `${calculatePercentage(analytics.paymentMethodDistribution.mpesa, totalPayments)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                        PayPal
+                      </span>
+                      <span className="text-sm font-bold">
+                        {analytics.paymentMethodDistribution.paypal} ({calculatePercentage(analytics.paymentMethodDistribution.paypal, totalPayments)}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2.5">
+                      <div
+                        className="bg-blue-500 h-2.5 rounded-full transition-all"
+                        style={{
+                          width: `${calculatePercentage(analytics.paymentMethodDistribution.paypal, totalPayments)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                        Bank Transfer
+                      </span>
+                      <span className="text-sm font-bold">
+                        {analytics.paymentMethodDistribution.bank} ({calculatePercentage(analytics.paymentMethodDistribution.bank, totalPayments)}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2.5">
+                      <div
+                        className="bg-amber-500 h-2.5 rounded-full transition-all"
+                        style={{
+                          width: `${calculatePercentage(analytics.paymentMethodDistribution.bank, totalPayments)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    Total Payments: <span className="font-semibold">{totalPayments}</span>
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Subscription Plans Distribution */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Subscription Plans</CardTitle>
+                <CardDescription>Active plan distribution</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                        Starter
+                      </span>
+                      <span className="text-sm font-bold">
+                        {analytics.planDistribution.starter} ({calculatePercentage(analytics.planDistribution.starter, totalPlans)}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2.5">
+                      <div
+                        className="bg-purple-500 h-2.5 rounded-full transition-all"
+                        style={{
+                          width: `${calculatePercentage(analytics.planDistribution.starter, totalPlans)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
+                        Professional
+                      </span>
+                      <span className="text-sm font-bold">
+                        {analytics.planDistribution.professional} ({calculatePercentage(analytics.planDistribution.professional, totalPlans)}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2.5">
+                      <div
+                        className="bg-indigo-500 h-2.5 rounded-full transition-all"
+                        style={{
+                          width: `${calculatePercentage(analytics.planDistribution.professional, totalPlans)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-rose-500"></div>
+                        Enterprise
+                      </span>
+                      <span className="text-sm font-bold">
+                        {analytics.planDistribution.enterprise} ({calculatePercentage(analytics.planDistribution.enterprise, totalPlans)}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2.5">
+                      <div
+                        className="bg-rose-500 h-2.5 rounded-full transition-all"
+                        style={{
+                          width: `${calculatePercentage(analytics.planDistribution.enterprise, totalPlans)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    Total Subscriptions: <span className="font-semibold">{totalPlans}</span>
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Secondary Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
-                <Crown className="h-4 w-4 text-primary" />
+                <Crown className="h-4 w-4 text-amber-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{analytics.activeSubscriptions}</div>
@@ -310,126 +571,35 @@ const AdminAnalytics = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Paid Invoices</CardTitle>
-                <TrendingUp className="h-4 w-4 text-success" />
+                <CardTitle className="text-sm font-medium">Invoice Success Rate</CardTitle>
+                <TrendingUp className="h-4 w-4 text-emerald-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{analytics.paidInvoices}</div>
+                <div className="text-2xl font-bold">
+                  {analytics.totalInvoices > 0 
+                    ? ((analytics.paidInvoices / analytics.totalInvoices) * 100).toFixed(1)
+                    : 0}%
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  {((analytics.paidInvoices / Math.max(analytics.totalInvoices, 1)) * 100).toFixed(
-                    1
-                  )}
-                  % success rate
+                  {analytics.paidInvoices} paid of {analytics.totalInvoices}
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Invoices</CardTitle>
-                <FileText className="h-4 w-4 text-warning" />
+                <CardTitle className="text-sm font-medium">Transaction Success</CardTitle>
+                <Activity className="h-4 w-4 text-blue-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{analytics.pendingInvoices}</div>
-                <p className="text-xs text-muted-foreground">Awaiting payment</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Breakdown Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Platform Overview</CardTitle>
-                <CardDescription>Key metrics summary</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Merchant Accounts</span>
-                  <Badge variant="outline">{analytics.totalUsers}</Badge>
+                <div className="text-2xl font-bold">
+                  {analytics.totalTransactions > 0
+                    ? ((analytics.completedTransactions / analytics.totalTransactions) * 100).toFixed(1)
+                    : 0}%
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Total Invoices Created</span>
-                  <Badge variant="outline">{analytics.totalInvoices}</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Subscriptions Sold</span>
-                  <Badge variant="outline">{analytics.totalSubscriptions}</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Payment Transactions</span>
-                  <Badge variant="outline">{analytics.totalTransactions}</Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>30-Day Growth</CardTitle>
-                <CardDescription>Recent platform activity</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">New Users</span>
-                    <span className="text-sm font-bold text-success">
-                      +{analytics.recentGrowth.users}
-                    </span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div
-                      className="bg-success h-2 rounded-full transition-all"
-                      style={{
-                        width: `${Math.min(
-                          (analytics.recentGrowth.users / Math.max(analytics.totalUsers, 1)) * 100,
-                          100
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">New Invoices</span>
-                    <span className="text-sm font-bold text-success">
-                      +{analytics.recentGrowth.invoices}
-                    </span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div
-                      className="bg-success h-2 rounded-full transition-all"
-                      style={{
-                        width: `${Math.min(
-                          (analytics.recentGrowth.invoices / Math.max(analytics.totalInvoices, 1)) *
-                            100,
-                          100
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Revenue Generated</span>
-                    <span className="text-sm font-bold text-success">
-                      +{formatCurrency(analytics.recentGrowth.revenue)}
-                    </span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div
-                      className="bg-success h-2 rounded-full transition-all"
-                      style={{
-                        width: `${Math.min(
-                          (analytics.recentGrowth.revenue / Math.max(analytics.totalRevenue, 1)) *
-                            100,
-                          100
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  {analytics.completedTransactions} completed, {analytics.failedTransactions} failed
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -440,4 +610,3 @@ const AdminAnalytics = () => {
 };
 
 export default AdminAnalytics;
-

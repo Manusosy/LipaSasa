@@ -41,6 +41,7 @@ import AdminSettings from "./pages/dashboard/admin/AdminSettings";
 import AdminSubscriptions from "./pages/dashboard/admin/AdminSubscriptions";
 import AdminAnalytics from "./pages/dashboard/admin/AdminAnalytics";
 import AdminTransactions from "./pages/dashboard/admin/AdminTransactions";
+import AdminReports from "./pages/dashboard/admin/AdminReports";
 import { PricingPage } from "./pages/pricing";
 
 const queryClient = new QueryClient();
@@ -69,7 +70,7 @@ const App = () => (
           <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
           <Route path="/admin/analytics" element={<AdminAnalytics />} />
           <Route path="/admin/transactions" element={<AdminTransactions />} />
-          <Route path="/admin/reports" element={<AdminDashboard />} />
+          <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
           <Route path="/admin/financial-settings" element={<FinancialSettings />} />
           <Route path="/pay/:invoiceId" element={<PayInvoice />} />
