@@ -17,7 +17,9 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { requireMerchant } from '@/lib/auth-utils';
 import { z } from 'zod';
+import { MpesaDarajaSetup } from '@/components/dashboard/MpesaDarajaSetup';
 
 interface PaymentMethods {
   mpesa_paybill: string | null;
@@ -83,13 +85,22 @@ const PaymentMethods = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkAccess = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         navigate('/auth');
-      } else {
-        fetchPaymentMethods();
+        return;
       }
-    });
+
+      const hasAccess = await requireMerchant(navigate);
+      if (!hasAccess) {
+        return;
+      }
+
+      fetchPaymentMethods();
+    };
+
+    checkAccess();
   }, [navigate]);
 
   const fetchPaymentMethods = async () => {
@@ -540,6 +551,11 @@ const PaymentMethods = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* M-Pesa Daraja API Setup */}
+          <div className="mb-6">
+            <MpesaDarajaSetup />
+          </div>
 
           {/* Card Payments */}
           <Card className="border border-border">

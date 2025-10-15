@@ -4,13 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { ArrowRight, ChevronLeft, Check } from 'lucide-react';
 import { BusinessInfoStep } from '@/components/onboarding/BusinessInfoStep';
-import { PaymentSetupStep } from '@/components/onboarding/PaymentSetupStep';
-import { PlanSelectionStep } from '@/components/onboarding/PlanSelectionStep';
 import { ReviewStep } from '@/components/onboarding/ReviewStep';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { User, Session } from '@supabase/supabase-js';
+import { redirectToDashboard } from '@/lib/auth-utils';
 
 export interface OnboardingData {
   businessInfo: {
@@ -27,7 +26,7 @@ export interface OnboardingData {
     airtelMoney: string;
     enableCards: boolean;
   };
-  selectedPlan: 'starter' | 'pro';
+  selectedPlan: 'free' | 'professional' | 'enterprise';
   agreeToTerms: boolean;
   subscribeNewsletter: boolean;
   password: string;
@@ -56,7 +55,7 @@ const GetStarted = () => {
       airtelMoney: '',
       enableCards: false
     },
-    selectedPlan: 'starter',
+    selectedPlan: 'free',
     agreeToTerms: false,
     subscribeNewsletter: false,
     password: ''
@@ -65,31 +64,31 @@ const GetStarted = () => {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Redirect authenticated users to dashboard
-          navigate('/dashboard');
+          // Redirect authenticated users to their appropriate dashboard
+          await redirectToDashboard(navigate);
         }
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        navigate('/dashboard');
+        await redirectToDashboard(navigate);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const totalSteps = 3; // Removed payment setup step - will be done in dashboard
+  const totalSteps = 2; // Only business info and review - default to free plan
 
   const updateOnboardingData = (stepData: Partial<OnboardingData>) => {
     setOnboardingData(prev => ({ ...prev, ...stepData }));
@@ -125,7 +124,7 @@ const GetStarted = () => {
             phone: onboardingData.businessInfo.phone,
             country: onboardingData.businessInfo.country,
             industry: onboardingData.businessInfo.industry,
-            selected_plan: onboardingData.selectedPlan,
+            selected_plan: 'free', // Always default to free plan
             subscribe_newsletter: onboardingData.subscribeNewsletter
           }
         }
@@ -181,15 +180,6 @@ const GetStarted = () => {
           />
         );
       case 2:
-        return (
-          <PlanSelectionStep
-            selectedPlan={onboardingData.selectedPlan}
-            onUpdate={(selectedPlan) => updateOnboardingData({ selectedPlan })}
-            onNext={nextStep}
-            onBack={prevStep}
-          />
-        );
-      case 3:
         return (
           <ReviewStep
             data={onboardingData}

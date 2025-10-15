@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
 
 const corsHeaders = {
@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -39,7 +39,7 @@ serve(async (req) => {
       .single();
 
     if (findError || !subscription) {
-      console.error('Subscription not found:', CheckoutRequestID);
+      console.error('Subscription not found:', CheckoutRequestID, findError);
       return new Response(
         JSON.stringify({ error: 'Subscription not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -54,6 +54,8 @@ serve(async (req) => {
       const transactionDate = metadata.find((item: any) => item.Name === 'TransactionDate')?.Value || '';
       const phoneNumber = metadata.find((item: any) => item.Name === 'PhoneNumber')?.Value || '';
 
+      console.log('Payment successful:', { amount, mpesaReceiptNumber, phoneNumber });
+
       // Calculate subscription dates (30 days from now)
       const startDate = new Date();
       const endDate = new Date();
@@ -65,7 +67,7 @@ serve(async (req) => {
         .update({
           status: 'active',
           mpesa_receipt_number: mpesaReceiptNumber,
-          paid_at: new Date(String(transactionDate)).toISOString(),
+          paid_at: new Date().toISOString(),
           start_date: startDate.toISOString(),
           end_date: endDate.toISOString(),
           updated_at: new Date().toISOString(),
@@ -74,6 +76,8 @@ serve(async (req) => {
 
       if (updateError) {
         console.error('Failed to update subscription:', updateError);
+      } else {
+        console.log('Subscription updated to active');
       }
 
       // Update user's plan in profiles
@@ -87,7 +91,19 @@ serve(async (req) => {
 
       if (profileError) {
         console.error('Failed to update user profile:', profileError);
+      } else {
+        console.log(`User profile updated to ${subscription.plan_name} plan`);
       }
+
+      // Update subscription_history
+      await supabaseClient
+        .from('subscription_history')
+        .update({
+          status: 'completed',
+          mpesa_receipt_number: mpesaReceiptNumber,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('transaction_ref', CheckoutRequestID);
 
       // Create transaction record for audit
       const { error: txError } = await supabaseClient
@@ -99,12 +115,15 @@ serve(async (req) => {
           status: 'completed',
           payment_method: 'mpesa',
           mpesa_receipt_number: mpesaReceiptNumber,
-          phone_number: phoneNumber,
-          description: `Subscription payment - ${subscription.plan_name}`,
+          phone_number: String(phoneNumber),
+          transaction_ref: CheckoutRequestID,
+          result_code: String(ResultCode),
+          result_desc: ResultDesc,
           metadata: {
             subscription_id: subscription.id,
             merchant_request_id: MerchantRequestID,
             checkout_request_id: CheckoutRequestID,
+            transaction_type: 'subscription_payment',
           },
         });
 
@@ -113,7 +132,7 @@ serve(async (req) => {
       }
 
       // TODO: Send confirmation email to user
-      console.log(`Subscription activated for user ${subscription.user_id}: ${subscription.plan_name}`);
+      console.log(`✅ Subscription activated for user ${subscription.user_id}: ${subscription.plan_name}`);
 
       return new Response(
         JSON.stringify({ 
@@ -127,6 +146,8 @@ serve(async (req) => {
 
     } else {
       // Payment failed
+      console.log('Payment failed:', ResultDesc);
+
       const { error: updateError } = await supabaseClient
         .from('subscriptions')
         .update({
@@ -140,7 +161,17 @@ serve(async (req) => {
         console.error('Failed to update subscription failure:', updateError);
       }
 
-      console.log(`Subscription payment failed for user ${subscription.user_id}: ${ResultDesc}`);
+      // Update subscription_history
+      await supabaseClient
+        .from('subscription_history')
+        .update({
+          status: 'failed',
+          failure_reason: ResultDesc,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('transaction_ref', CheckoutRequestID);
+
+      console.log(`❌ Subscription payment failed for user ${subscription.user_id}: ${ResultDesc}`);
 
       return new Response(
         JSON.stringify({ 
@@ -161,4 +192,3 @@ serve(async (req) => {
     );
   }
 });
-

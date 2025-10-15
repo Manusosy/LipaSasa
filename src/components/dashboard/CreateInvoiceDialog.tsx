@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Copy, Check } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import { createInvoiceSchema } from '@/lib/validations';
 
 interface CreateInvoiceDialogProps {
@@ -59,6 +60,43 @@ export const CreateInvoiceDialog: React.FC<CreateInvoiceDialogProps> = ({ onInvo
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+
+      // Check user's plan and invoice limit
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('selected_plan')
+        .eq('user_id', user.id)
+        .single();
+
+      // Get pricing tier limits
+      const { data: pricingTier } = await supabase
+        .from('pricing_tiers')
+        .select('max_invoices, name')
+        .eq('name', profile?.selected_plan || 'free')
+        .single();
+
+      // Count existing invoices
+      const { count: invoiceCount } = await supabase
+        .from('invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      const maxInvoices = pricingTier?.max_invoices || 10;
+      
+      if (invoiceCount !== null && invoiceCount >= maxInvoices) {
+        toast({
+          title: "Invoice Limit Reached",
+          description: `You've reached the maximum of ${maxInvoices} invoices on the ${pricingTier?.name || 'Free'} plan. Please upgrade your subscription to create more invoices.`,
+          variant: "destructive",
+        });
+        setLoading(false);
+        setOpen(false);
+        // Navigate to subscription page after a short delay
+        setTimeout(() => {
+          window.location.href = '/dashboard/subscription';
+        }, 2000);
+        return;
+      }
 
       // Check if user has configured any payment method
       const { data: paymentMethods } = await supabase

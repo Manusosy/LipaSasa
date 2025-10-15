@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { cn } from '@/lib/utils';
+import { requireMerchant } from '@/lib/auth-utils';
 import { useToast } from '@/hooks/use-toast';
 
 interface Transaction {
@@ -41,14 +42,22 @@ const Transactions = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check authentication
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkAccess = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         navigate('/auth');
-      } else {
-        fetchTransactions();
+        return;
       }
-    });
+
+      const hasAccess = await requireMerchant(navigate);
+      if (!hasAccess) {
+        return;
+      }
+
+      fetchTransactions();
+    };
+
+    checkAccess();
   }, [navigate]);
 
   // Filter transactions based on search

@@ -21,6 +21,7 @@ import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import { User, Session } from '@supabase/supabase-js';
 import { cn } from '@/lib/utils';
+import { requireMerchant } from '@/lib/auth-utils';
 
 interface UserProfile {
   business_name: string;
@@ -71,26 +72,44 @@ const SellerDashboard = () => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (!session?.user) {
           navigate('/auth');
+          return;
+        }
+
+        // Check if user is a merchant (not admin)
+        const hasAccess = await requireMerchant(navigate);
+        if (!hasAccess) {
+          return; // User will be redirected to admin dashboard
         }
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Initial access check and data fetch
+    const checkAccessAndFetch = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
       
-      if (session?.user) {
-        fetchUserData();
-      } else {
+      if (!session?.user) {
         navigate('/auth');
+        return;
       }
-    });
+
+      // Check if user is a merchant (not admin)
+      const hasAccess = await requireMerchant(navigate);
+      if (!hasAccess) {
+        return; // User will be redirected to admin dashboard
+      }
+
+      fetchUserData();
+    };
+
+    checkAccessAndFetch();
 
     return () => subscription.unsubscribe();
   }, [navigate]);

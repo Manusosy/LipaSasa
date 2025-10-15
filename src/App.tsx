@@ -34,6 +34,13 @@ import { AuthPage } from "./pages/auth";
 import { VerifyOTP } from "./pages/auth/VerifyOTP";
 import { AdminAuth } from "./pages/auth/AdminAuth";
 import { FinancialSettings } from "./pages/dashboard/admin/FinancialSettings";
+import UsersManagement from "./pages/dashboard/admin/UsersManagement";
+import NotificationsManagement from "./pages/dashboard/admin/NotificationsManagement";
+import PricingManagement from "./pages/dashboard/admin/PricingManagement";
+import AdminSettings from "./pages/dashboard/admin/AdminSettings";
+import AdminSubscriptions from "./pages/dashboard/admin/AdminSubscriptions";
+import AdminAnalytics from "./pages/dashboard/admin/AdminAnalytics";
+import AdminTransactions from "./pages/dashboard/admin/AdminTransactions";
 import { PricingPage } from "./pages/pricing";
 
 const queryClient = new QueryClient();
@@ -56,6 +63,14 @@ const App = () => (
           <Route path="/dashboard/subscription" element={<Subscription />} />
           <Route path="/dashboard/settings" element={<Settings />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<UsersManagement />} />
+          <Route path="/admin/pricing" element={<PricingManagement />} />
+          <Route path="/admin/notifications" element={<NotificationsManagement />} />
+          <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
+          <Route path="/admin/analytics" element={<AdminAnalytics />} />
+          <Route path="/admin/transactions" element={<AdminTransactions />} />
+          <Route path="/admin/reports" element={<AdminDashboard />} />
+          <Route path="/admin/settings" element={<AdminSettings />} />
           <Route path="/admin/financial-settings" element={<FinancialSettings />} />
           <Route path="/pay/:invoiceId" element={<PayInvoice />} />
           <Route path="/pay/link/:slug" element={<PaymentPage />} />

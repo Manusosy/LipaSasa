@@ -32,13 +32,23 @@ export const AdminAuth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
-          // Check if user is admin
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .single();
+        if (session?.user && event === 'SIGNED_IN') {
+          // Add small delay to ensure trigger has completed
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Check if user is admin with retry
+          let roleData = null;
+          for (let i = 0; i < 3; i++) {
+            const { data } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .single();
+            
+            roleData = data;
+            if (roleData?.role === 'admin') break;
+            if (i < 2) await new Promise(resolve => setTimeout(resolve, 500));
+          }
 
           if (roleData?.role === 'admin') {
             navigate('/admin');
@@ -121,7 +131,13 @@ export const AdminAuth = () => {
         options: {
           data: {
             full_name: fullName,
+            owner_name: fullName,
             phone: phoneNumber,
+            business_name: `${fullName}'s Admin Account`,
+            country: 'Kenya',
+            industry: 'Technology',
+            selected_plan: 'admin',
+            subscribe_newsletter: false,
           },
         },
       });
@@ -133,32 +149,57 @@ export const AdminAuth = () => {
       }
 
       if (data.user) {
-        // Create admin role entry
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: data.user.id,
-            role: 'admin',
-          });
+        setSuccess('Admin account created successfully! Signing you in...');
+        
+        // Wait a moment for the trigger to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Automatically sign in the user
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-        if (roleError) {
-          console.error('Failed to assign admin role:', roleError);
-          setError('Account created but admin role assignment failed. Contact support.');
-          setLoading(false);
+        if (signInError) {
+          setSuccess('Account created! Please sign in manually.');
+          setTimeout(() => {
+            setIsSignUp(false);
+            setPassword('');
+            setRepeatPassword('');
+            setFullName('');
+            setPhoneNumber('');
+            setSuccess('');
+          }, 2000);
           return;
         }
 
-        setSuccess('Admin account created successfully! You can now sign in.');
-        // Clear form and switch to sign in
-        setTimeout(() => {
-          setIsSignUp(false);
-          setEmail('');
-          setPassword('');
-          setRepeatPassword('');
-          setFullName('');
-          setPhoneNumber('');
-          setSuccess('');
-        }, 2000);
+        // Check admin role with retry logic
+        let attempts = 0;
+        let isAdmin = false;
+        
+        while (attempts < 3 && !isAdmin) {
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', signInData.user.id)
+            .single();
+
+          if (roleData?.role === 'admin') {
+            isAdmin = true;
+            // Auth state listener will handle the redirect to /admin
+          } else {
+            attempts++;
+            if (attempts < 3) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
+          }
+        }
+
+        if (!isAdmin) {
+          await supabase.auth.signOut();
+          setError('Admin role assignment pending. Please contact support.');
+          setLoading(false);
+        }
       }
     } catch (err) {
       console.error('Signup error:', err);
@@ -241,7 +282,11 @@ export const AdminAuth = () => {
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/20 mb-4">
-            <Shield className="h-8 w-8 text-red-400" />
+            <img 
+              src="/favicon.ico" 
+              alt="LipaSasa Logo" 
+              className="h-12 w-12 rounded-lg"
+            />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-md">Admin Access</h1>
           <p className="text-white/70 drop-shadow">Authorized personnel only</p>

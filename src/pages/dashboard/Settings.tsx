@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { requireMerchant } from '@/lib/auth-utils';
 
 interface ProfileData {
   business_name: string;
@@ -50,14 +51,24 @@ const Settings = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check authentication
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkAccess = async () => {
+      // Check authentication
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         navigate('/auth');
-      } else {
-        fetchProfile();
+        return;
       }
-    });
+
+      // Check if user is a merchant (not admin)
+      const hasAccess = await requireMerchant(navigate);
+      if (!hasAccess) {
+        return; // User will be redirected to admin dashboard
+      }
+
+      fetchProfile();
+    };
+
+    checkAccess();
   }, [navigate]);
 
   const fetchProfile = async () => {

@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
 
 const corsHeaders = {
@@ -14,7 +14,7 @@ interface SubscriptionPaymentRequest {
   currency: string;
 }
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -29,6 +29,8 @@ serve(async (req) => {
     const requestData: SubscriptionPaymentRequest = await req.json();
     const { user_id, plan_name, amount, phone_number, currency } = requestData;
 
+    console.log('Subscription payment request:', { user_id, plan_name, amount, currency });
+
     // Validate input
     if (!user_id || !plan_name || !amount || !phone_number) {
       return new Response(
@@ -37,28 +39,43 @@ serve(async (req) => {
       );
     }
 
-    // Get M-Pesa credentials from admin settings (encrypted)
+    // Get M-Pesa credentials from admin_payment_settings table
     const { data: settingsData, error: settingsError } = await supabaseClient
-      .from('admin_settings')
-      .select('setting_value')
-      .eq('setting_key', 'mpesa_subscription_credentials')
+      .from('admin_payment_settings')
+      .select('settings')
+      .eq('payment_gateway', 'mpesa')
+      .eq('is_active', true)
       .single();
 
     if (settingsError || !settingsData) {
       console.error('Failed to fetch M-Pesa credentials:', settingsError);
       return new Response(
-        JSON.stringify({ error: 'Payment service configuration error' }),
+        JSON.stringify({ error: 'M-Pesa payment gateway not configured. Please contact support.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const mpesaCredentials = settingsData.setting_value;
-    const { consumer_key, consumer_secret, shortcode, passkey } = mpesaCredentials;
+    const mpesaSettings = settingsData.settings as any;
+    const { consumer_key, consumer_secret, shortcode, passkey, environment } = mpesaSettings;
+
+    if (!consumer_key || !consumer_secret || !shortcode || !passkey) {
+      console.error('Incomplete M-Pesa credentials in admin settings');
+      return new Response(
+        JSON.stringify({ error: 'M-Pesa configuration incomplete. Please contact support.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Determine API URL based on environment
+    const apiUrl = environment === 'production'
+      ? 'https://api.safaricom.co.ke'
+      : 'https://sandbox.safaricom.co.ke';
 
     // Get M-Pesa access token
+    console.log('Requesting OAuth token...');
     const auth = btoa(`${consumer_key}:${consumer_secret}`);
     const tokenResponse = await fetch(
-      'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
+      `${apiUrl}/oauth/v1/generate?grant_type=client_credentials`,
       {
         headers: {
           'Authorization': `Basic ${auth}`,
@@ -67,17 +84,36 @@ serve(async (req) => {
     );
 
     if (!tokenResponse.ok) {
-      throw new Error('Failed to get M-Pesa access token');
+      const errorText = await tokenResponse.text();
+      console.error('Failed to get M-Pesa access token:', errorText);
+      return new Response(
+        JSON.stringify({ error: 'Failed to authenticate with M-Pesa. Please contact support.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const { access_token } = await tokenResponse.json();
+    console.log('OAuth token obtained successfully');
 
     // Prepare STK Push request
     const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14);
     const password = btoa(`${shortcode}${passkey}${timestamp}`);
 
-    // Format phone number (remove + and ensure it starts with 254)
-    const formattedPhone = phone_number.replace(/^\+/, '').replace(/^0/, '254');
+    // Format phone number (remove + and spaces, ensure it starts with 254)
+    let formattedPhone = phone_number.replace(/[\s\-\+]/g, '');
+    if (formattedPhone.startsWith('0')) {
+      formattedPhone = '254' + formattedPhone.substring(1);
+    } else if (!formattedPhone.startsWith('254')) {
+      formattedPhone = '254' + formattedPhone;
+    }
+
+    // Validate phone number format
+    if (!/^254[17]\d{8}$/.test(formattedPhone)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid phone number format. Use 254XXXXXXXXX' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const stkPushPayload = {
       BusinessShortCode: shortcode,
@@ -96,7 +132,7 @@ serve(async (req) => {
     console.log('Initiating M-Pesa STK Push for subscription:', stkPushPayload.AccountReference);
 
     const stkResponse = await fetch(
-      'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
+      `${apiUrl}/mpesa/stkpush/v1/processrequest`,
       {
         method: 'POST',
         headers: {
@@ -108,13 +144,14 @@ serve(async (req) => {
     );
 
     const stkData = await stkResponse.json();
+    console.log('STK Push response:', stkData);
 
     if (!stkResponse.ok || stkData.ResponseCode !== '0') {
       console.error('M-Pesa STK Push failed:', stkData);
       return new Response(
         JSON.stringify({ 
           error: 'Payment initiation failed', 
-          details: stkData.CustomerMessage || stkData.errorMessage 
+          details: stkData.CustomerMessage || stkData.errorMessage || stkData.ResponseDescription
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -139,6 +176,19 @@ serve(async (req) => {
       console.error('Failed to store subscription record:', dbError);
     }
 
+    // Also record in subscription_history
+    await supabaseClient
+      .from('subscription_history')
+      .insert({
+        user_id: user_id,
+        plan_name: plan_name,
+        amount: amount,
+        currency: currency || 'KES',
+        payment_method: 'mpesa',
+        status: 'pending',
+        transaction_ref: stkData.CheckoutRequestID,
+      });
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -157,4 +207,3 @@ serve(async (req) => {
     );
   }
 });
-

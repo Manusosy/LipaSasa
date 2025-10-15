@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
+import { requireMerchant } from '@/lib/auth-utils';
 
 interface PaymentLink {
   id: string;
@@ -52,9 +53,24 @@ const PaymentLinks: React.FC = () => {
   const [availableMethods, setAvailableMethods] = useState<Array<{value: string; label: string}>>([]);
 
   useEffect(() => {
-    fetchLinks();
-    fetchPaymentMethods();
-  }, []);
+    const checkAccess = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        navigate('/auth');
+        return;
+      }
+
+      const hasAccess = await requireMerchant(navigate);
+      if (!hasAccess) {
+        return;
+      }
+
+      fetchLinks();
+      fetchPaymentMethods();
+    };
+
+    checkAccess();
+  }, [navigate]);
 
   const fetchPaymentMethods = async () => {
     try {

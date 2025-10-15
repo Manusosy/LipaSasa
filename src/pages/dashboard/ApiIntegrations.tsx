@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { requireMerchant } from '@/lib/auth-utils';
 
 const ApiIntegrations = () => {
   const [apiKey, setApiKey] = useState<string>('');
@@ -31,14 +32,22 @@ const ApiIntegrations = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check authentication
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkAccess = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         navigate('/auth');
-      } else {
-        fetchApiKeys();
+        return;
       }
-    });
+
+      const hasAccess = await requireMerchant(navigate);
+      if (!hasAccess) {
+        return;
+      }
+
+      fetchApiKeys();
+    };
+
+    checkAccess();
   }, [navigate]);
 
   const fetchApiKeys = async () => {

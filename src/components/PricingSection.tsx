@@ -2,90 +2,10 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, X, CreditCard, FileText, Zap, Shield, BarChart3, Users, Webhook, Clock } from 'lucide-react';
+import { Check, X, CreditCard, FileText, Zap, Shield, BarChart3, Users, Webhook, Clock, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-const plans = [
-  {
-    name: 'Starter',
-    price: '0',
-    priceKES: '0',
-    description: 'Perfect for small businesses testing the waters.',
-    features: [
-      '10 invoices/month',
-      'M-Pesa STK Push',
-      'Basic dashboard',
-      'Email support (48h response)',
-      'Payment links',
-      'Standard receipts',
-    ],
-    limits: {
-      invoices: '10/month',
-      transactions: 'Unlimited',
-      apiAccess: false,
-      support: 'Email (48h)',
-      teamMembers: '1',
-    },
-    cta: 'Start Free',
-    popular: false,
-  },
-  {
-    name: 'Professional',
-    price: '29',
-    priceKES: '1,500',
-    description: 'For growing businesses that need more power and features.',
-    features: [
-      '100 invoices/month',
-      'M-Pesa STK Push',
-      'Advanced analytics & reports',
-      'Priority support (4h response)',
-      'API access with webhooks',
-      'Custom branding',
-      'Bulk invoicing',
-      'Export data (CSV/PDF)',
-      'Multiple payment methods',
-      'Up to 5 team members',
-    ],
-    limits: {
-      invoices: '100/month',
-      transactions: 'Unlimited',
-      apiAccess: true,
-      support: 'Priority Email (4h)',
-      teamMembers: '5',
-    },
-    cta: 'Start Pro Trial',
-    popular: true,
-  },
-  {
-    name: 'Enterprise',
-    price: '99',
-    priceKES: '5,000',
-    description: 'For established businesses with advanced needs.',
-    features: [
-      'Unlimited invoices',
-      'All payment methods',
-      'Dedicated account manager',
-      '24/7 priority support',
-      'Advanced API access',
-      'Custom integrations',
-      'White-label solution',
-      'SLA guarantee (99.9% uptime)',
-      'Advanced security features',
-      'Unlimited team members',
-      'Custom reporting',
-      'Priority onboarding',
-    ],
-    limits: {
-      invoices: 'Unlimited',
-      transactions: 'Unlimited',
-      apiAccess: true,
-      support: '24/7 Phone & Email',
-      teamMembers: 'Unlimited',
-    },
-    cta: 'Contact Sales',
-    popular: false,
-  },
-];
+import { usePricing } from '@/hooks/use-pricing';
+import { supabase } from '@/integrations/supabase/client';
 
 const features = [
   {
@@ -153,13 +73,47 @@ const features = [
 
 export const PricingSection = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [currency, setCurrency] = useState<'KSH' | 'USD'>('KSH');
   const navigate = useNavigate();
+  const { tiers, loading, formatPrice, getPlanPrice, getAnnualDiscount, convertToUSD } = usePricing();
+
+  const handleSelectPlan = async (tierName: string) => {
+    // Check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      // Store selected plan in sessionStorage for after login
+      sessionStorage.setItem('selectedPlan', tierName);
+      sessionStorage.setItem('selectedBillingCycle', billingCycle);
+      navigate('/get-started');
+    } else {
+      // User is authenticated, go to subscription page
+      navigate('/dashboard/subscription', { 
+        state: { selectedPlan: tierName, billingCycle } 
+      });
+    }
+  };
 
   const renderFeatureValue = (value: any) => {
     if (value === true) return <Check className="h-5 w-5 text-primary mx-auto" />;
     if (value === false || value === '-') return <X className="h-5 w-5 text-muted-foreground mx-auto" />;
     return <span className="text-sm text-foreground">{value}</span>;
   };
+
+  if (loading) {
+    return (
+      <section className="py-24 bg-gradient-to-br from-slate-50 via-white to-slate-50">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+              <p className="text-muted-foreground">Loading pricing...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-24 bg-gradient-to-br from-slate-50 via-white to-slate-50" id="pricing">
@@ -172,71 +126,131 @@ export const PricingSection = () => {
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
             Transparent pricing with no hidden fees. Start free, upgrade as you grow. All paid plans include a 14-day free trial.
           </p>
+          
+          {/* Currency and Billing Toggles */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+            <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
+              <Button
+                variant={billingCycle === 'monthly' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setBillingCycle('monthly')}
+              >
+                Monthly
+              </Button>
+              <Button
+                variant={billingCycle === 'annual' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setBillingCycle('annual')}
+              >
+                Annual
+                <span className="ml-2 text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">
+                  Save 17%
+                </span>
+              </Button>
+            </div>
+            
+            <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
+              <Button
+                variant={currency === 'KSH' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setCurrency('KSH')}
+              >
+                KSh
+              </Button>
+              <Button
+                variant={currency === 'USD' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setCurrency('USD')}
+              >
+                USD
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-20">
-          {plans.map((plan) => (
-            <Card
-              key={plan.name}
-              className={`relative shadow-lg hover:shadow-xl transition-all ${
-                plan.popular ? 'ring-2 ring-primary scale-105' : ''
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                  <span className="bg-gradient-to-r from-primary to-secondary text-white px-4 py-1.5 rounded-full text-sm font-semibold shadow-lg">
-                    ⭐ Most Popular
-                  </span>
-                </div>
-              )}
+          {tiers.map((tier, index) => {
+            const monthlyPrice = getPlanPrice(tier.tier_name, 'monthly', currency);
+            const annualPrice = getPlanPrice(tier.tier_name, 'annual', currency);
+            const price = billingCycle === 'monthly' ? monthlyPrice : annualPrice;
+            const isPopular = tier.tier_name === 'professional';
+            const discount = getAnnualDiscount(monthlyPrice, annualPrice);
 
-              <CardHeader className="text-center pt-8">
-                <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
-                <div className="mb-4">
-                  {plan.price === '0' ? (
-                    <div>
-                      <span className="text-5xl font-bold">Free</span>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="flex items-center justify-center mb-1">
-                        <span className="text-2xl font-medium">KSh</span>
-                        <span className="text-5xl font-bold mx-2">{plan.priceKES}</span>
-                        <span className="text-muted-foreground">/mo</span>
+            return (
+              <Card
+                key={tier.id}
+                className={`relative shadow-lg hover:shadow-xl transition-all ${
+                  isPopular ? 'ring-2 ring-primary scale-105' : ''
+                }`}
+              >
+                {isPopular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+                    <span className="bg-gradient-to-r from-primary to-secondary text-white px-4 py-1.5 rounded-full text-sm font-semibold shadow-lg">
+                      ⭐ Most Popular
+                    </span>
+                  </div>
+                )}
+
+                <CardHeader className="text-center pt-8">
+                  <CardTitle className="text-2xl mb-2">{tier.display_name}</CardTitle>
+                  <div className="mb-4">
+                    {tier.tier_name === 'free' ? (
+                      <div>
+                        <span className="text-5xl font-bold">Free</span>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        or ${plan.price}/month
+                    ) : (
+                      <div>
+                        <div className="flex items-center justify-center mb-1">
+                          <span className="text-2xl font-medium">{currency === 'KSH' ? 'KSh' : '$'}</span>
+                          <span className="text-5xl font-bold mx-2">
+                            {currency === 'KSH' 
+                              ? price.toLocaleString() 
+                              : price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            }
+                          </span>
+                          <span className="text-muted-foreground">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+                        </div>
+                        {billingCycle === 'annual' && (
+                          <div className="text-sm text-green-600 font-medium">
+                            Save {discount}% with annual billing
+                          </div>
+                        )}
+                        {currency === 'KSH' && (
+                          <div className="text-sm text-muted-foreground mt-1">
+                            ~${convertToUSD(price).toFixed(2)} {billingCycle === 'monthly' ? '/month' : '/year'}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  )}
-                </div>
-                <CardDescription className="text-base">
-                  {plan.description}
-                </CardDescription>
-              </CardHeader>
+                    )}
+                  </div>
+                  <CardDescription className="text-base">
+                    {tier.max_invoices ? `${tier.max_invoices} invoices/month` : 'Unlimited invoices'}
+                  </CardDescription>
+                </CardHeader>
 
-              <CardContent>
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                      <Check className="h-5 w-5 text-primary mr-3 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm text-muted-foreground">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+                <CardContent>
+                  <ul className="space-y-3 mb-8">
+                    {tier.features.map((feature, index) => (
+                      <li key={index} className="flex items-start">
+                        <Check className="h-5 w-5 text-primary mr-3 flex-shrink-0 mt-0.5" />
+                        <span className="text-sm text-muted-foreground">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
 
-                <Button
-                  variant={plan.popular ? 'default' : 'outline'}
-                  size="lg"
-                  className="w-full"
-                  onClick={() => navigate('/get-started')}
-                >
-                  {plan.cta}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                  <Button
+                    variant={isPopular ? 'default' : 'outline'}
+                    size="lg"
+                    className="w-full"
+                    onClick={() => handleSelectPlan(tier.tier_name)}
+                  >
+                    {tier.tier_name === 'free' ? 'Start Free' : tier.tier_name === 'enterprise' ? 'Contact Sales' : 'Start Trial'}
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Detailed Feature Comparison */}

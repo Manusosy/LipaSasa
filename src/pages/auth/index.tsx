@@ -10,6 +10,7 @@ import { Mail, Lock, ArrowRight, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { User, Session } from '@supabase/supabase-js';
+import { redirectToDashboard } from '@/lib/auth-utils';
 
 export const AuthPage = () => {
   const [email, setEmail] = useState('');
@@ -24,24 +25,24 @@ export const AuthPage = () => {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Redirect authenticated users to dashboard
-          navigate('/dashboard');
+          // Redirect authenticated users to their appropriate dashboard based on role
+          await redirectToDashboard(navigate);
         }
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        navigate('/dashboard');
+        await redirectToDashboard(navigate);
       }
     });
 
@@ -81,10 +82,12 @@ export const AuthPage = () => {
     setError('');
     
     try {
+      // Note: redirectTo will be handled by the auth state change listener
+      // which will redirect based on the user's role
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: `${window.location.origin}/auth`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

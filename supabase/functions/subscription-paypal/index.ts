@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
 
 const corsHeaders = {
@@ -13,7 +13,7 @@ interface PayPalSubscriptionRequest {
   currency: string;
 }
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -27,6 +27,8 @@ serve(async (req) => {
     const requestData: PayPalSubscriptionRequest = await req.json();
     const { user_id, plan_name, amount, currency } = requestData;
 
+    console.log('PayPal subscription request:', { user_id, plan_name, amount, currency });
+
     // Validate input
     if (!user_id || !plan_name || !amount) {
       return new Response(
@@ -35,28 +37,39 @@ serve(async (req) => {
       );
     }
 
-    // Get PayPal credentials from admin settings (encrypted)
+    // Get PayPal credentials from admin_payment_settings table
     const { data: settingsData, error: settingsError } = await supabaseClient
-      .from('admin_settings')
-      .select('setting_value')
-      .eq('setting_key', 'paypal_credentials')
+      .from('admin_payment_settings')
+      .select('settings')
+      .eq('payment_gateway', 'paypal')
+      .eq('is_active', true)
       .single();
 
     if (settingsError || !settingsData) {
       console.error('Failed to fetch PayPal credentials:', settingsError);
       return new Response(
-        JSON.stringify({ error: 'Payment service configuration error' }),
+        JSON.stringify({ error: 'PayPal payment gateway not configured. Please contact support.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const paypalCredentials = settingsData.setting_value;
-    const { client_id, client_secret, mode } = paypalCredentials;
+    const paypalSettings = settingsData.settings as any;
+    const { client_id, client_secret, mode } = paypalSettings;
+
+    if (!client_id || !client_secret) {
+      console.error('Incomplete PayPal credentials in admin settings');
+      return new Response(
+        JSON.stringify({ error: 'PayPal configuration incomplete. Please contact support.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     // Determine PayPal API base URL based on mode
     const paypalBaseUrl = mode === 'live' 
       ? 'https://api-m.paypal.com' 
       : 'https://api-m.sandbox.paypal.com';
+
+    console.log(`Using PayPal ${mode} environment`);
 
     // Get PayPal access token
     const auth = btoa(`${client_id}:${client_secret}`);
@@ -70,10 +83,16 @@ serve(async (req) => {
     });
 
     if (!tokenResponse.ok) {
-      throw new Error('Failed to get PayPal access token');
+      const errorText = await tokenResponse.text();
+      console.error('Failed to get PayPal access token:', errorText);
+      return new Response(
+        JSON.stringify({ error: 'Failed to authenticate with PayPal. Please contact support.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const { access_token } = await tokenResponse.json();
+    console.log('PayPal access token obtained');
 
     // Create PayPal order
     const orderPayload = {
@@ -92,8 +111,8 @@ serve(async (req) => {
         brand_name: 'LipaSasa',
         landing_page: 'BILLING',
         user_action: 'PAY_NOW',
-        return_url: `${Deno.env.get('SITE_URL')}/dashboard/subscription?status=success`,
-        cancel_url: `${Deno.env.get('SITE_URL')}/dashboard/subscription?status=cancelled`,
+        return_url: `${Deno.env.get('SUPABASE_URL').replace('//', '//').replace('supabase.co', 'vercel.app')}/dashboard/subscription?status=success`,
+        cancel_url: `${Deno.env.get('SUPABASE_URL').replace('//', '//').replace('supabase.co', 'vercel.app')}/dashboard/subscription?status=cancelled`,
       },
     };
 
@@ -118,6 +137,7 @@ serve(async (req) => {
     }
 
     const orderData = await orderResponse.json();
+    console.log('PayPal order created:', orderData.id);
 
     // Store pending subscription in database
     const { error: dbError } = await supabaseClient
@@ -130,17 +150,29 @@ serve(async (req) => {
         status: 'pending',
         payment_method: 'paypal',
         paypal_order_id: orderData.id,
-        metadata: {
-          paypal_order: orderData,
-        },
       });
 
     if (dbError) {
       console.error('Failed to store subscription record:', dbError);
     }
 
+    // Also record in subscription_history
+    await supabaseClient
+      .from('subscription_history')
+      .insert({
+        user_id: user_id,
+        plan_name: plan_name,
+        amount: amount,
+        currency: currency || 'USD',
+        payment_method: 'paypal',
+        status: 'pending',
+        transaction_ref: orderData.id,
+      });
+
     // Extract approval URL for redirect
     const approvalLink = orderData.links.find((link: any) => link.rel === 'approve');
+
+    console.log('✅ PayPal order created, approval URL:', approvalLink?.href);
 
     return new Response(
       JSON.stringify({
@@ -161,4 +193,3 @@ serve(async (req) => {
     );
   }
 });
-

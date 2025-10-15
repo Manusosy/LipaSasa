@@ -239,15 +239,15 @@ const PaymentPage: React.FC = () => {
       <div className="max-w-2xl w-full">
         {/* Logo/Branding */}
         <div className="text-center mb-6">
-          {link.logo_url ? (
-            <img src={link.logo_url} alt="Logo" className="h-16 w-auto mx-auto mb-4" />
-          ) : (
-            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl font-bold text-primary-foreground">
-                {link.title.charAt(0).toUpperCase()}
-              </span>
-            </div>
-          )}
+          <img 
+            src={link.logo_url || '/lipasasa-logo.png'} 
+            alt="Logo" 
+            className="h-16 w-auto mx-auto mb-4" 
+            onError={(e) => {
+              // Fallback to favicon if custom logo fails to load
+              e.currentTarget.src = '/favicon.ico';
+            }}
+          />
           <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">{link.title}</h1>
           {link.description && (
             <p className="text-muted-foreground">{link.description}</p>

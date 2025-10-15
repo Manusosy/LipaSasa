@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.55.0";
 
 const corsHeaders = {
@@ -19,9 +19,10 @@ interface MpesaCredentials {
   consumer_key: string;
   consumer_secret: string;
   passkey: string;
+  environment: 'sandbox' | 'production';
 }
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -94,7 +95,7 @@ serve(async (req) => {
     if (credError || !credentials) {
       console.error('Credentials fetch error:', credError);
       return new Response(
-        JSON.stringify({ error: 'M-PESA credentials not found. Please set up your M-PESA integration first.' }),
+        JSON.stringify({ error: 'M-PESA credentials not found. Please set up your M-PESA integration in Payment Methods first.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -104,14 +105,22 @@ serve(async (req) => {
       consumer_key: credentials.consumer_key,
       consumer_secret: credentials.consumer_secret,
       passkey: credentials.passkey,
+      environment: credentials.environment || 'sandbox',
     };
+
+    // Determine API URL based on environment
+    const apiUrl = mpesaCreds.environment === 'production'
+      ? 'https://api.safaricom.co.ke'
+      : 'https://sandbox.safaricom.co.ke';
+
+    console.log(`Using ${mpesaCreds.environment} environment`);
 
     // Step 1: Get OAuth token from Safaricom
     console.log('Requesting OAuth token...');
     const auth = btoa(`${mpesaCreds.consumer_key}:${mpesaCreds.consumer_secret}`);
     
     const tokenResponse = await fetch(
-      'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
+      `${apiUrl}/oauth/v1/generate?grant_type=client_credentials`,
       {
         method: 'GET',
         headers: {
@@ -151,12 +160,12 @@ serve(async (req) => {
       PartyB: mpesaCreds.shortcode,
       PhoneNumber: formattedPhone,
       CallBackURL: callbackUrl,
-      AccountReference: invoiceId || `TEST-${Date.now()}`,
+      AccountReference: invoiceId || `PAY-${Date.now()}`,
       TransactionDesc: description || 'Payment',
     };
 
     const stkResponse = await fetch(
-      'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
+      `${apiUrl}/mpesa/stkpush/v1/processrequest`,
       {
         method: 'POST',
         headers: {
@@ -196,9 +205,13 @@ serve(async (req) => {
 
     if (txError) {
       console.error('Transaction insert error:', txError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to record transaction' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log('STK Push initiated successfully:', stkResult.CheckoutRequestID);
+    console.log('✅ STK Push initiated successfully:', stkResult.CheckoutRequestID);
 
     return new Response(
       JSON.stringify({
@@ -210,7 +223,7 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Unexpected error:', error);
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
