@@ -32,9 +32,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { AdminSidebar } from '@/components/dashboard/AdminSidebar';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { requireAdmin } from '@/lib/auth-utils';
 
 interface Transaction {
   id: string;
@@ -51,7 +49,7 @@ interface Transaction {
   profiles: {
     business_name: string;
     owner_name: string;
-  };
+  } | null;
 }
 
 const AdminTransactions = () => {
@@ -60,8 +58,6 @@ const AdminTransactions = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [stats, setStats] = useState({
     total: 0,
@@ -75,21 +71,8 @@ const AdminTransactions = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkAccess = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        navigate('/admin/auth');
-        return;
-      }
-
-      const hasAccess = await requireAdmin(navigate);
-      if (!hasAccess) return;
-
-      fetchTransactions();
-    };
-
     checkAccess();
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     let filtered = transactions;
@@ -111,34 +94,84 @@ const AdminTransactions = () => {
     setFilteredTransactions(filtered);
   }, [searchQuery, statusFilter, transactions]);
 
+  const checkAccess = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/admin/auth');
+        return;
+      }
+
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .single();
+
+      if (!roles) {
+        toast({
+          title: 'Access Denied',
+          description: 'You do not have admin privileges',
+          variant: 'destructive',
+        });
+        navigate('/dashboard');
+        return;
+      }
+
+      fetchTransactions();
+    } catch (error) {
+      console.error('Error checking admin access:', error);
+      navigate('/admin/auth');
+    }
+  };
+
   const fetchTransactions = async () => {
     try {
       const { data, error } = await supabase
         .from('transactions')
-        .select(`
-          *,
-          profiles!transactions_user_id_fkey (
-            business_name,
-            owner_name
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
-        .limit(500); // Limit to latest 500 for performance
+        .limit(500);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Transactions fetch error:', error);
+        throw error;
+      }
 
-      setTransactions(data || []);
-      setFilteredTransactions(data || []);
+      // Fetch profiles separately
+      const userIds = data?.map(t => t.user_id).filter(Boolean) || [];
+      let profilesMap: Record<string, any> = {};
+
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, business_name, owner_name')
+          .in('user_id', userIds);
+
+        profiles?.forEach(p => {
+          profilesMap[p.user_id] = p;
+        });
+      }
+
+      // Combine data
+      const txWithProfiles = (data || []).map(tx => ({
+        ...tx,
+        profiles: profilesMap[tx.user_id] || null
+      }));
+
+      setTransactions(txWithProfiles);
+      setFilteredTransactions(txWithProfiles);
 
       // Calculate stats
-      const completed = data?.filter((t) => t.status === 'completed').length || 0;
-      const pending = data?.filter((t) => t.status === 'pending').length || 0;
-      const failed = data?.filter((t) => t.status === 'failed').length || 0;
+      const completed = txWithProfiles.filter((t) => t.status === 'completed').length;
+      const pending = txWithProfiles.filter((t) => t.status === 'pending').length;
+      const failed = txWithProfiles.filter((t) => t.status === 'failed').length;
       const totalAmount =
-        data?.filter((t) => t.status === 'completed').reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+        txWithProfiles.filter((t) => t.status === 'completed').reduce((sum, t) => sum + (t.amount || 0), 0);
 
       setStats({
-        total: data?.length || 0,
+        total: txWithProfiles.length,
         completed,
         pending,
         failed,
@@ -176,7 +209,7 @@ const AdminTransactions = () => {
     );
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
+  const formatCurrency = (amount: number, currency: string = 'KES') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency || 'KES',
@@ -240,70 +273,38 @@ const AdminTransactions = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading transactions...</p>
+      <div className="flex h-screen bg-gray-50">
+        <AdminSidebar />
+        <div className="flex-1 overflow-y-auto flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading transactions...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex w-full">
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-
-      <AdminSidebar
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        mobileMenuOpen={mobileMenuOpen}
-        onMobileMenuClose={() => setMobileMenuOpen(false)}
-      />
-
-      <main
-        className={cn(
-          'flex-1 transition-all duration-300 w-full',
-          'ml-0 lg:ml-20',
-          !sidebarCollapsed && 'lg:ml-64'
-        )}
-      >
-        {/* Header */}
-        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
-          <div className="flex items-center justify-between h-16 px-4 lg:px-6">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="lg:hidden"
-                onClick={() => setMobileMenuOpen(true)}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </Button>
-              <div>
-                <h1 className="text-lg lg:text-xl font-bold text-foreground">All Transactions</h1>
-                <p className="text-xs text-muted-foreground hidden sm:block">
-                  Platform-wide payment transactions
-                </p>
-              </div>
+    <div className="flex h-screen bg-gray-50">
+      <AdminSidebar />
+      
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-8">
+          {/* Header */}
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">All Transactions</h1>
+              <p className="text-gray-500 mt-2">Platform-wide payment transactions</p>
             </div>
-            <Button onClick={exportToCSV} size="sm">
+            <Button onClick={exportToCSV}>
               <Download className="w-4 h-4 mr-2" />
               Export CSV
             </Button>
           </div>
-        </header>
 
-        {/* Content */}
-        <div className="p-4 lg:p-6 max-w-7xl mx-auto">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total</CardTitle>
@@ -318,7 +319,7 @@ const AdminTransactions = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Completed</CardTitle>
-                <CheckCircle2 className="h-4 w-4 text-success" />
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.completed}</div>
@@ -329,7 +330,7 @@ const AdminTransactions = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Pending</CardTitle>
-                <Clock className="h-4 w-4 text-warning" />
+                <Clock className="h-4 w-4 text-yellow-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.pending}</div>
@@ -340,7 +341,7 @@ const AdminTransactions = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Failed</CardTitle>
-                <XCircle className="h-4 w-4 text-destructive" />
+                <XCircle className="h-4 w-4 text-red-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.failed}</div>
@@ -354,7 +355,7 @@ const AdminTransactions = () => {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(stats.totalAmount, 'KES')}</div>
+                <div className="text-2xl font-bold">{formatCurrency(stats.totalAmount)}</div>
                 <p className="text-xs text-muted-foreground">Completed only</p>
               </CardContent>
             </Card>
@@ -443,7 +444,7 @@ const AdminTransactions = () => {
                             </div>
                           </TableCell>
                           <TableCell className="font-medium">
-                            {formatCurrency(tx.amount, tx.currency || 'KES')}
+                            {formatCurrency(tx.amount, tx.currency)}
                           </TableCell>
                           <TableCell className="capitalize">{tx.payment_method || 'N/A'}</TableCell>
                           <TableCell className="text-sm">{tx.phone_number || 'N/A'}</TableCell>
@@ -460,10 +461,9 @@ const AdminTransactions = () => {
             </CardContent>
           </Card>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
 
 export default AdminTransactions;
-

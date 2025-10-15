@@ -24,7 +24,6 @@ import {
   TrendingUp,
   Users,
   DollarSign,
-  Calendar,
   Loader2,
   Filter,
   Download,
@@ -32,9 +31,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { AdminSidebar } from '@/components/dashboard/AdminSidebar';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { requireAdmin } from '@/lib/auth-utils';
 
 interface Subscription {
   id: string;
@@ -50,7 +47,7 @@ interface Subscription {
   profiles: {
     business_name: string;
     owner_name: string;
-  };
+  } | null;
 }
 
 const AdminSubscriptions = () => {
@@ -59,10 +56,7 @@ const AdminSubscriptions = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Metrics
   const [metrics, setMetrics] = useState({
     totalActive: 0,
     totalRevenue: 0,
@@ -74,21 +68,8 @@ const AdminSubscriptions = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkAccess = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        navigate('/admin/auth');
-        return;
-      }
-
-      const hasAccess = await requireAdmin(navigate);
-      if (!hasAccess) return;
-
-      fetchSubscriptions();
-    };
-
     checkAccess();
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     let filtered = subscriptions;
@@ -109,37 +90,85 @@ const AdminSubscriptions = () => {
     setFilteredSubs(filtered);
   }, [searchQuery, statusFilter, subscriptions]);
 
+  const checkAccess = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/admin/auth');
+        return;
+      }
+
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .single();
+
+      if (!roles) {
+        toast({
+          title: 'Access Denied',
+          description: 'You do not have admin privileges',
+          variant: 'destructive',
+        });
+        navigate('/dashboard');
+        return;
+      }
+
+      fetchSubscriptions();
+    } catch (error) {
+      console.error('Error checking admin access:', error);
+      navigate('/admin/auth');
+    }
+  };
+
   const fetchSubscriptions = async () => {
     try {
       const { data, error } = await supabase
         .from('subscriptions')
-        .select(`
-          *,
-          profiles!subscriptions_user_id_fkey (
-            business_name,
-            owner_name
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Subscriptions fetch error:', error);
+        throw error;
+      }
 
-      setSubscriptions(data || []);
-      setFilteredSubs(data || []);
+      // Fetch profiles separately to avoid join issues
+      const userIds = data?.map(s => s.user_id).filter(Boolean) || [];
+      let profilesMap: Record<string, any> = {};
+
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, business_name, owner_name')
+          .in('user_id', userIds);
+
+        profiles?.forEach(p => {
+          profilesMap[p.user_id] = p;
+        });
+      }
+
+      // Combine data
+      const subsWithProfiles = (data || []).map(sub => ({
+        ...sub,
+        profiles: profilesMap[sub.user_id] || null
+      }));
+
+      setSubscriptions(subsWithProfiles);
+      setFilteredSubs(subsWithProfiles);
 
       // Calculate metrics
-      const active = data?.filter((s) => s.status === 'active').length || 0;
-      const revenue = data
-        ?.filter((s) => s.status === 'active' || s.status === 'completed')
-        .reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
+      const active = subsWithProfiles.filter((s) => s.status === 'active').length;
+      const revenue = subsWithProfiles
+        .filter((s) => s.status === 'active' || s.status === 'completed')
+        .reduce((sum, s) => sum + (s.amount || 0), 0);
       
-      // Monthly recurring from active subscriptions
-      const monthlyRev = data
-        ?.filter((s) => s.status === 'active')
-        .reduce((sum, s) => sum + (s.amount || 0), 0) || 0;
+      const monthlyRev = subsWithProfiles
+        .filter((s) => s.status === 'active')
+        .reduce((sum, s) => sum + (s.amount || 0), 0);
 
-      // Unique merchants with subscriptions
-      const uniqueMerchants = new Set(data?.map((s) => s.user_id)).size;
+      const uniqueMerchants = new Set(subsWithProfiles.map((s) => s.user_id)).size;
 
       setMetrics({
         totalActive: active,
@@ -174,7 +203,7 @@ const AdminSubscriptions = () => {
     );
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
+  const formatCurrency = (amount: number, currency: string = 'KES') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency || 'KES',
@@ -192,66 +221,32 @@ const AdminSubscriptions = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading subscriptions...</p>
+      <div className="flex h-screen bg-gray-50">
+        <AdminSidebar />
+        <div className="flex-1 overflow-y-auto flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading subscriptions...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex w-full">
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-
-      <AdminSidebar
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        mobileMenuOpen={mobileMenuOpen}
-        onMobileMenuClose={() => setMobileMenuOpen(false)}
-      />
-
-      <main
-        className={cn(
-          'flex-1 transition-all duration-300 w-full',
-          'ml-0 lg:ml-20',
-          !sidebarCollapsed && 'lg:ml-64'
-        )}
-      >
-        {/* Header */}
-        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
-          <div className="flex items-center justify-between h-16 px-4 lg:px-6">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="lg:hidden"
-                onClick={() => setMobileMenuOpen(true)}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </Button>
-              <div>
-                <h1 className="text-lg lg:text-xl font-bold text-foreground">Subscriptions Management</h1>
-                <p className="text-xs text-muted-foreground hidden sm:block">
-                  View and manage all merchant subscriptions
-                </p>
-              </div>
-            </div>
+    <div className="flex h-screen bg-gray-50">
+      <AdminSidebar />
+      
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Subscriptions Management</h1>
+            <p className="text-gray-500 mt-2">View and manage all merchant subscriptions</p>
           </div>
-        </header>
 
-        {/* Content */}
-        <div className="p-4 lg:p-6 max-w-7xl mx-auto">
           {/* Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
@@ -269,9 +264,7 @@ const AdminSubscriptions = () => {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatCurrency(metrics.totalRevenue, 'KES')}
-                </div>
+                <div className="text-2xl font-bold">{formatCurrency(metrics.totalRevenue)}</div>
                 <p className="text-xs text-muted-foreground">All-time subscription revenue</p>
               </CardContent>
             </Card>
@@ -282,9 +275,7 @@ const AdminSubscriptions = () => {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatCurrency(metrics.monthlyRecurring, 'KES')}
-                </div>
+                <div className="text-2xl font-bold">{formatCurrency(metrics.monthlyRecurring)}</div>
                 <p className="text-xs text-muted-foreground">From active subscriptions</p>
               </CardContent>
             </Card>
@@ -412,10 +403,9 @@ const AdminSubscriptions = () => {
             </CardContent>
           </Card>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
 
 export default AdminSubscriptions;
-

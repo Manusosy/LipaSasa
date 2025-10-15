@@ -30,8 +30,6 @@ import {
 
 const AdminReports = () => {
   const [loading, setLoading] = useState(true);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('30');
   const [generating, setGenerating] = useState<string | null>(null);
 
@@ -353,67 +351,32 @@ const AdminReports = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
+      <div className="flex h-screen bg-gray-50">
+        <AdminSidebar />
+        <div className="flex-1 overflow-y-auto flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex w-full">
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-
-      <AdminSidebar
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        mobileMenuOpen={mobileMenuOpen}
-        onMobileMenuClose={() => setMobileMenuOpen(false)}
-      />
-
-      <main
-        className={cn(
-          'flex-1 transition-all duration-300 w-full',
-          'ml-0 lg:ml-20',
-          !sidebarCollapsed && 'lg:ml-64'
-        )}
-      >
-        {/* Header */}
-        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
-          <div className="flex items-center justify-between h-16 px-4 lg:px-6">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="lg:hidden"
-                onClick={() => setMobileMenuOpen(true)}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </Button>
-              <div>
-                <h1 className="text-lg lg:text-xl font-bold text-foreground flex items-center gap-2">
-                  <FileBarChart className="h-5 w-5" />
-                  Reports & Exports
-                </h1>
-                <p className="text-xs text-muted-foreground hidden sm:block">
-                  Generate and download platform reports
-                </p>
-              </div>
-            </div>
+    <div className="flex h-screen bg-gray-50">
+      <AdminSidebar />
+      
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Reports & Exports</h1>
+            <p className="text-gray-500 mt-2">Generate and download platform reports</p>
           </div>
-        </header>
 
-        {/* Content */}
-        <div className="p-4 lg:p-6 max-w-7xl mx-auto space-y-6">
+          {/* Content */}
+          <div className="space-y-6">
           {/* Period Selector */}
           <Card>
             <CardHeader>
@@ -617,8 +580,9 @@ const AdminReports = () => {
               </p>
             </CardContent>
           </Card>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
