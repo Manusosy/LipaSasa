@@ -1,300 +1,368 @@
 # LipaSasa Development TODO
 
-## ✅ Completed
-- [x] Database schema (invoices, transactions, subscriptions, api_keys, mpesa_credentials, payment_methods, profiles)
-- [x] Dashboard UI pages (Seller Dashboard, Invoices, Transactions, M-PESA Setup, API Integrations, Subscription, Settings)
-- [x] Authentication flow (sign up, login, logout)
-- [x] Row Level Security policies
-- [x] Dashboard navigation and routing
-- [x] Create Invoice Dialog UI
+**Last Updated:** January 27, 2025  
+**Status:** Production-Ready Core, Security & API Enhancements Needed
 
 ---
 
-## 🚨 PHASE 1: Core M-PESA Payment Integration (CRITICAL - IN PROGRESS)
+## 🚨 CRITICAL - Week 1 (Security & Configuration)
 
-### 1.1 M-PESA STK Push Edge Function
-- [x] Create `supabase/functions/mpesa-stk-push/index.ts`
-  - [x] Fetch merchant M-PESA credentials from database
-  - [x] Get OAuth token from Safaricom API
-  - [x] Generate STK Push password (Base64: shortcode + passkey + timestamp)
-  - [x] Send STK Push request to Safaricom
-  - [x] Store CheckoutRequestID in transactions table
-  - [x] Handle errors (invalid credentials, network issues)
-  - [x] Add comprehensive logging
+### Security Fixes
+- [ ] Fix database functions with mutable search_path (8 functions)
+  - `assign_default_merchant_role`
+  - `is_user_admin`
+  - `is_user_merchant`
+  - `update_updated_at_column`
+  - `calculate_usd_price`
+  - `calculate_annual_price`
+  - `update_subscription_status`
+  - `expire_subscriptions`
+  - **Fix:** Add `SET search_path = public, pg_temp;` to each function
 
-### 1.2 M-PESA Callback Handler
-- [x] Create `supabase/functions/mpesa-callback/index.ts`
-  - [x] Receive Safaricom callback payload
-  - [x] Validate callback signature/authenticity
-  - [x] Parse payment result (success/failure)
-  - [x] Update invoice status (paid/failed)
-  - [x] Update transaction with M-PESA receipt number
-  - [x] Handle duplicate callbacks (idempotency)
-  - [x] Add error logging
+### Auth Configuration (Manual via Supabase Dashboard)
+- [ ] Reduce OTP expiry to 10 minutes (currently > 1 hour)
+  - Location: Authentication → Email Auth → OTP Expiry
+- [ ] Enable leaked password protection (HaveIBeenPwned)
+  - Location: Authentication → Policies
+- [ ] Upgrade Postgres to latest version
+  - Location: Database → Settings → Upgrade
 
-### 1.3 Customer Payment Page
-- [x] Create `src/pages/pay/[invoiceId].tsx`
-  - [x] Fetch invoice details from database
-  - [x] Display invoice information (amount, merchant, description)
-  - [x] Phone number input (validate 254 format)
-  - [x] "Pay Now" button to trigger STK Push
-  - [x] Real-time payment status polling
-  - [x] Success/failure UI states
-  - [x] Handle expired invoices
+### Admin Setup (Required for Subscriptions)
+- [ ] Configure Platform M-Pesa credentials
+  - Login at `/admin/auth`
+  - Go to Settings → M-Pesa tab
+  - Enter Daraja API credentials (Consumer Key, Secret, Shortcode, Passkey)
+  - Test connection
+  - Enable M-Pesa payments
+- [ ] Configure PayPal credentials
+  - Go to Settings → PayPal tab
+  - Enter Client ID and Client Secret (sandbox first)
+  - Set mode to "sandbox"
+  - Test subscription flow
+  - Switch to "live" for production
 
-### 1.4 Connect M-PESA Setup Test Button
-- [x] Update `src/pages/dashboard/MpesaSetup.tsx`
-  - [x] Implement `handleTest()` function
-  - [x] Call mpesa-stk-push with 1 KES test payment
-  - [x] Display test results
-  - [x] Show validation errors
-
-### 1.5 Invoice Payment Flow Integration
-- [x] Update `src/components/dashboard/CreateInvoiceDialog.tsx`
-  - [x] Generate proper payment links
-  - [x] Add "Copy Link" and "Send to Customer" buttons
-  - [x] Validate payment methods are configured before invoice creation
-- [x] Dashboard Payment Methods Section
-  - [x] Make setup buttons functional (clickable to open payment methods dialog)
-  - [x] Improve UX for payment method configuration
-- [x] Notification System
-  - [x] Create NotificationBell component
-  - [x] Real-time payment notifications
-  - [x] Transaction status updates
-  - [x] Unread count indicator
-- [ ] Update `src/pages/dashboard/Invoices.tsx`
-  - [ ] Add "Send Payment Link" action
-  - [ ] Show real-time payment status updates
-
----
-
-## 🔐 PHASE 2: Security Hardening (HIGH PRIORITY)
-
-### 2.1 Encrypt M-PESA Credentials
-- [ ] Research Supabase Vault or pgcrypto
-- [ ] Implement encryption for mpesa_credentials table
-- [ ] Update edge functions to decrypt credentials
-- [ ] Migration script for existing data
-- **NOTE**: M-PESA credentials should be encrypted using Supabase Vault. This requires manual setup in production.
-
-### 2.2 Admin Roles & Permissions
-- [x] Create `app_role` enum (admin, merchant, user)
-- [x] Create `user_roles` table with RLS
-- [x] Create `has_role()` security definer function
-- [x] Update RLS policies to use role checks
-- [x] Assign 'merchant' role by default on user signup
-- [ ] Seed initial admin user (requires manual SQL: `INSERT INTO user_roles (user_id, role) VALUES ('<admin_user_id>', 'admin')`)
-
-### 2.3 Input Validation
-- [x] Add Zod schemas for all forms
-- [x] Validate phone numbers (254 format)
-- [x] Sanitize user inputs (trim, max length)
-- [x] Add validation to CreateInvoiceDialog
-- [x] Add validation to MpesaSetup form
-- [x] Add validation to payment page
-- [ ] Add rate limiting to edge functions (requires Supabase Edge Function rate limiting configuration)
-
-### 2.4 Fix Auth Security Warnings
-- [ ] Update OTP expiry settings in Supabase dashboard (https://supabase.com/dashboard/project/qafcuihpszmexfpxnyax/settings/auth)
-- [ ] Enable leaked password protection (https://supabase.com/dashboard/project/qafcuihpszmexfpxnyax/settings/auth)
-- [ ] Upgrade Postgres version (https://supabase.com/dashboard/project/qafcuihpszmexfpxnyax/settings/infrastructure)
-
-### 2.5 Webhook Security
-- [x] Add request origin logging to mpesa-callback
-- [ ] Implement IP whitelist for Safaricom callback IPs (production requirement)
-- [ ] Add signature verification for callbacks (optional, Safaricom-specific)
-
----
-
-## 💳 PHASE 3: Subscription Payment System
-
-### 3.1 Subscription Payment Edge Function
-- [ ] Create `supabase/functions/subscription-payment/index.ts`
-  - [ ] Use LipaSasa's Paybill/Till (not merchant's)
-  - [ ] Calculate pro-rated amounts for mid-month upgrades
-  - [ ] Trigger STK Push to merchant's phone
-  - [ ] Update profile.selected_plan on success
-  - [ ] Create subscription record
-
-### 3.2 Connect Subscription UI
-- [ ] Update `src/pages/dashboard/Subscription.tsx`
-  - [ ] Implement `handleUpgrade()` function
-  - [ ] Show payment status modal
-  - [ ] Handle payment failures with retry
-  - [ ] Display subscription history
-
----
-
-## 📊 PHASE 4: Invoice Limits & Enforcement
-
-### 4.1 Invoice Limit Logic
-- [ ] Create `get_invoice_count()` database function
-- [ ] Update `CreateInvoiceDialog.tsx` to check limits
-- [ ] Block creation if limit reached
-- [ ] Show upgrade prompt modal
-
-### 4.2 Dashboard Notifications
-- [ ] Add notification system component
-- [ ] Show warnings at 80%, 90%, 100% of limit
-- [ ] Add notification bell to dashboard header
-
----
-
-## 🔌 PHASE 5: Merchant API Implementation
-
-### 5.1 API Endpoints
-- [ ] Create `supabase/functions/api-create-invoice/index.ts`
-  - [ ] Verify API key and secret from headers
-  - [ ] Check invoice limits
-  - [ ] Create invoice
-  - [ ] Return invoice with payment link
-- [ ] Create `supabase/functions/api-check-payment/index.ts`
-  - [ ] Verify API credentials
-  - [ ] Return payment status
-  - [ ] Return transaction details
-
-### 5.2 API Key Management
-- [ ] Update `src/pages/dashboard/ApiIntegrations.tsx`
-  - [ ] Implement "Regenerate Keys" button
-  - [ ] Update code examples with real endpoints
-  - [ ] Add API usage statistics
-  - [ ] Show rate limit status
-
----
-
-## 👨‍💼 PHASE 6: Admin Dashboard
-
-### 6.1 Admin Interface
-- [ ] Complete `src/pages/dashboard/AdminDashboard.tsx`
-  - [ ] Platform-wide KPIs (revenue, users, transactions)
-  - [ ] Charts for daily/weekly/monthly trends
-  - [ ] Recent transactions across all merchants
-  - [ ] System health indicators
-
-### 6.2 User Management
-- [ ] Create admin user management page
-  - [ ] List all merchants
-  - [ ] View merchant details
-  - [ ] Suspend/activate accounts
-  - [ ] Reset passwords
-  - [ ] View merchant transactions
-
-### 6.3 Subscription Management
-- [ ] Admin view of all subscriptions
-- [ ] Manually upgrade/downgrade plans
-- [ ] Refund/cancel subscriptions
-- [ ] View payment history
-
----
-
-## 📧 PHASE 7: Notifications (Optional Enhancement)
-
-### 7.1 Email Notifications
-- [ ] Set up Resend integration
-- [ ] Create `supabase/functions/send-invoice-email/index.ts`
-- [ ] Email templates (invoice created, payment received, subscription expiring)
-- [ ] Add email preferences to settings
-
-### 7.2 SMS Notifications
-- [ ] Set up Africa's Talking integration
-- [ ] Create `supabase/functions/send-sms/index.ts`
-- [ ] SMS for payment links
-- [ ] SMS for payment confirmations
-
-### 7.3 WhatsApp Integration
-- [ ] Research WhatsApp Business API options
-- [ ] Implement payment link sharing via WhatsApp
-
----
-
-## 🧪 PHASE 8: Testing & Polish
-
-### 8.1 End-to-End Testing
-- [ ] Test merchant onboarding flow
-- [ ] Test M-PESA setup and credential validation
+### Testing
+- [ ] Test subscription payment via M-Pesa
+- [ ] Test subscription payment via PayPal
 - [ ] Test invoice creation and payment
-- [ ] Test subscription upgrade flow
-- [ ] Test API endpoints
-- [ ] Test admin dashboard
-- [ ] Test error scenarios
-
-### 8.2 Error Handling Improvements
-- [ ] Proper error messages for failed payments
-- [ ] Retry mechanisms for API calls
-- [ ] Graceful fallbacks for network issues
-- [ ] User-friendly error pages
-
-### 8.3 Performance Optimization
-- [ ] Add loading skeletons
-- [ ] Optimize database queries
-- [ ] Add proper indexes
-- [ ] Implement data pagination
-- [ ] Add caching where appropriate
-
-### 8.4 UI/UX Polish
-- [ ] Mobile responsiveness testing
-- [ ] Dark mode consistency
-- [ ] Accessibility (ARIA labels, keyboard navigation)
-- [ ] Loading states for all actions
-- [ ] Success/error toast notifications
-- [ ] Consistent error handling
+- [ ] Test payment link creation and payment
+- [ ] Verify transaction records in database
 
 ---
 
-## 📝 PHASE 9: Documentation
+## 🔧 HIGH PRIORITY - Week 2-3 (API Implementation)
 
-### 9.1 Developer Documentation
-- [ ] API documentation
-- [ ] Setup guide for local development
-- [ ] M-PESA integration guide
-- [ ] Deployment guide
+### Merchant API Endpoints
+- [ ] Create Edge Function: `api/v1/create-invoice`
+  - Input: customer_name, customer_email, amount, description
+  - Output: invoice_id, payment_link
+  - Auth: API key + secret validation
+  - Rate limit: 100 requests/min
+- [ ] Create Edge Function: `api/v1/stk-push`
+  - Input: phone_number, amount, invoice_id
+  - Output: checkout_request_id, transaction_id
+  - Auth: API key validation
+- [ ] Create Edge Function: `api/v1/transaction-status`
+  - Input: transaction_id or checkout_request_id
+  - Output: status, amount, mpesa_receipt_number
+  - Auth: API key validation
+- [ ] Create Edge Function: `api/v1/register-webhook`
+  - Input: webhook_url, events[]
+  - Output: webhook_id, secret
+  - Auth: API key validation
 
-### 9.2 User Documentation
-- [ ] Merchant onboarding guide
-- [ ] How to get Daraja credentials
-- [ ] FAQ section
-- [ ] Troubleshooting guide
+### API Infrastructure
+- [ ] Implement API key authentication middleware
+  - Validate X-API-Key and X-API-Secret headers
+  - Hash API keys before storage (use SHA-256)
+  - Show key only once on creation
+- [ ] Implement rate limiting
+  - Use Supabase or Redis for counter storage
+  - Return 429 Too Many Requests when exceeded
+- [ ] Add Idempotency-Key support
+  - Prevent duplicate transactions
+  - Store processed idempotency keys for 24 hours
+
+### API Documentation
+- [ ] Create `/docs/api` page with interactive docs
+- [ ] Add code examples (Node.js, Python, PHP, cURL)
+- [ ] Create Postman collection
+- [ ] Document error codes and responses
+- [ ] Add webhook setup guide
 
 ---
 
-## 🚀 PHASE 10: Production Readiness
+## 🔔 MEDIUM PRIORITY - Week 4 (Webhooks & Notifications)
 
-### 10.1 Environment Configuration
-- [ ] Set up production Supabase project
-- [ ] Configure production M-PESA credentials
-- [ ] Set up monitoring and logging
-- [ ] Configure backup strategy
+### Webhook System
+- [ ] Create `webhooks` table
+  ```sql
+  CREATE TABLE webhooks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id),
+    url TEXT NOT NULL,
+    secret TEXT NOT NULL,
+    events TEXT[] NOT NULL, -- ['payment.success', 'payment.failed']
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT now()
+  );
+  ```
+- [ ] Implement webhook delivery system
+  - Trigger on transaction status change
+  - Send POST request to registered webhook URLs
+  - Include HMAC-SHA256 signature in headers
+- [ ] Add retry logic
+  - Retry 3 times with exponential backoff (1s, 5s, 25s)
+  - Mark webhook as failed after 3 retries
+- [ ] Create webhook delivery log table
+  ```sql
+  CREATE TABLE webhook_deliveries (
+    id UUID PRIMARY KEY,
+    webhook_id UUID REFERENCES webhooks(id),
+    event TEXT,
+    payload JSONB,
+    response_code INT,
+    response_body TEXT,
+    delivered_at TIMESTAMPTZ,
+    error TEXT
+  );
+  ```
 
-### 10.2 Compliance
-- [ ] Privacy policy
-- [ ] Terms of service
-- [ ] GDPR compliance (data export/deletion)
-- [ ] PCI compliance review
+### Email Notifications
+- [ ] Configure email provider (Resend or SendGrid)
+- [ ] Create email templates
+  - Invoice created
+  - Payment received
+  - Payment failed
+  - Subscription expiring (7 days before)
+  - Subscription expired
+- [ ] Create Edge Function: `send-email`
+- [ ] Add email preferences to user settings
 
-### 10.3 Launch Checklist
-- [ ] Security audit
-- [ ] Performance testing
-- [ ] Load testing
-- [ ] Staging environment testing
-- [ ] Production deployment plan
-- [ ] Rollback strategy
+### WhatsApp Integration (Optional)
+- [ ] Research WhatsApp Business API providers
+- [ ] Implement payment link sharing via WhatsApp
+- [ ] Add WhatsApp notification preferences
 
 ---
 
-## 📈 Future Enhancements (Backlog)
+## 📊 MEDIUM PRIORITY - Month 2 (Production Readiness)
 
-- [ ] Multi-currency support
-- [ ] Airtel Money integration
-- [ ] Card payments via Flutterwave/Paystack
-- [ ] Recurring invoices/subscriptions
-- [ ] Customer portal
-- [ ] Invoice templates customization
+### Audit & Monitoring
+- [ ] Create audit_logs table
+  ```sql
+  CREATE TABLE audit_logs (
+    id UUID PRIMARY KEY,
+    user_id UUID,
+    action TEXT,
+    resource TEXT,
+    timestamp TIMESTAMPTZ DEFAULT now(),
+    ip_address TEXT,
+    user_agent TEXT
+  );
+  ```
+- [ ] Log all admin actions (user suspend, plan change, etc.)
+- [ ] Set up error tracking (Sentry or similar)
+- [ ] Configure uptime monitoring (Pingdom, UptimeRobot)
+- [ ] Create transaction success rate dashboard
+
+### Error Handling & UX
+- [ ] Add error boundaries to React components
+- [ ] Improve loading states across all pages
+- [ ] Add retry mechanisms for failed API calls
+- [ ] Create user-friendly error pages
+- [ ] Add contextual help tooltips
+
+### Performance Optimization
+- [ ] Add database indexes for common queries
+  - `invoices.user_id`
+  - `transactions.user_id`
+  - `transactions.invoice_id`
+  - `subscriptions.user_id`
+- [ ] Implement pagination for large datasets
+- [ ] Add caching for frequently accessed data
+- [ ] Optimize Edge Function cold starts
+
+### Documentation
+- [ ] Create merchant onboarding guide
+- [ ] Write "How to get Daraja credentials" tutorial
+- [ ] Create FAQ section
+- [ ] Write troubleshooting guide
+- [ ] Create video tutorials (invoice creation, payment setup)
+
+---
+
+## 🚀 FUTURE ENHANCEMENTS - Month 3+
+
+### Payment Gateway Expansion
+- [ ] Integrate Airtel Money
+  - STK Push flow
+  - Callback handling
+- [ ] Add card payments via Flutterwave
+  - Hosted checkout page
+  - Webhook integration
+- [ ] Add card payments via Paystack
+  - Alternative to Flutterwave
+- [ ] Support Uganda mobile money (MTN, Airtel)
+- [ ] Support Tanzania mobile money (Vodacom, Airtel, Tigo)
+- [ ] Support Rwanda mobile money (MTN, Airtel)
+
+### Advanced Features
+- [ ] Recurring invoices
+  - Weekly, Monthly, Quarterly, Annual
+  - Auto-send on schedule
+- [ ] Invoice templates
+  - Custom branding
+  - Logo upload
+  - Color scheme customization
+- [ ] PDF receipt generation
+  - Auto-generate on payment success
+  - Email to customer
+  - Download from dashboard
 - [ ] Bulk invoice creation
-- [ ] Export reports (PDF, CSV)
-- [ ] Mobile app
-- [ ] Multi-country expansion
+  - CSV upload
+  - Template-based creation
+- [ ] Customer portal
+  - Customer login
+  - View all invoices
+  - Payment history
+  - Download receipts
+
+### Subscription Management
+- [ ] Subscription cancellation flow
+  - Cancel at end of billing period
+  - Immediate cancellation with refund
+- [ ] Auto-renewal reminders
+  - Email 7 days before renewal
+  - SMS notification
+- [ ] Proration for mid-cycle upgrades
+  - Calculate prorated refund
+  - Charge difference for new plan
+- [ ] Usage-based billing
+  - Pay per transaction
+  - Volume discounts
+
+### Business Intelligence
+- [ ] Advanced analytics dashboard
+  - Revenue trends
+  - Customer acquisition cost
+  - Lifetime value
+- [ ] Revenue forecasting
+  - Predict next month revenue
+  - Subscription churn rate
+- [ ] Customer segmentation
+  - High-value customers
+  - At-risk customers
+- [ ] Export reports
+  - PDF export
+  - CSV export
+  - Excel export
+  - Scheduled reports
+
+### Multi-Country Expansion
+- [ ] Add currency support (UGX, TZS, RWF, NGN)
+- [ ] Implement real-time currency conversion
+- [ ] Add country-specific payment methods
+- [ ] Localize UI (Swahili, French)
+- [ ] Add country-specific tax handling
+
+### Mobile App
+- [ ] React Native app for merchants
+  - Create invoices on-the-go
+  - View payments in real-time
+  - Push notifications
+- [ ] Customer mobile app
+  - View invoices
+  - Make payments
+  - Receipt downloads
+
+### Compliance & Security
+- [ ] PCI-DSS compliance audit
+- [ ] GDPR compliance
+  - Data export functionality
+  - Data deletion workflow
+  - Cookie consent
+- [ ] 2FA/MFA authentication
+  - SMS-based OTP
+  - Authenticator app support
+- [ ] IP allowlisting for admin
+- [ ] Webhook signature verification (HMAC)
+- [ ] API request signing
+- [ ] SOC 2 Type II certification
 
 ---
 
-**Current Focus**: Phase 1 - M-PESA Payment Integration
-**Next Up**: Phase 2 - Security Hardening
+## ✅ COMPLETED
+
+### Core Features
+- [x] User signup/login (merchant + admin)
+- [x] Invoice creation with payment links
+- [x] M-Pesa STK Push integration (merchant credentials)
+- [x] M-Pesa callback handling
+- [x] Payment link creation and sharing
+- [x] Payment link STK Push
+- [x] Transaction tracking
+- [x] Subscription payment via M-Pesa (platform credentials)
+- [x] Subscription payment via PayPal
+- [x] PayPal webhook handling
+- [x] Plan limit enforcement (Free plan = 10 invoices)
+- [x] Admin dashboard (users, analytics, reports)
+- [x] Merchant dashboard (invoices, transactions, settings)
+- [x] API key generation
+- [x] Payment method configuration (Paybill/Till/Bank)
+- [x] M-Pesa Daraja setup UI
+- [x] Notification system (basic)
+- [x] Responsive design (mobile-friendly)
+- [x] RLS policies for all tables
+- [x] Admin domain restriction (@kazinikazi.co.ke)
+- [x] Environment support (sandbox/production)
+
+### Infrastructure
+- [x] Database schema (17 tables)
+- [x] 8 Edge Functions deployed
+- [x] Frontend deployed to Vercel
+- [x] Backend on Supabase
+- [x] 49 shadcn/ui components
+- [x] Role-based access control
+- [x] Pricing tiers (Free, Professional, Enterprise)
+
+### Documentation
+- [x] README.md
+- [x] PRD.md
+- [x] DEVELOPMENT.md
+- [x] SECURITY_AUDIT_REPORT.md
+- [x] CODEBASE_COMPREHENSIVE_ANALYSIS.md
+- [x] Cleaned up 12 redundant MD files
+
+---
+
+## 📝 Notes
+
+### Current Blockers
+1. **Admin must configure M-Pesa** for subscriptions to work
+2. **Admin must configure PayPal** for PayPal subscriptions to work
+3. **Merchants must configure Daraja credentials** for invoice payments to work
+
+### Known Limitations
+- No subscription cancellation flow
+- No auto-renewal
+- No proration for mid-cycle upgrades
+- No merchant API endpoints (keys exist but no functions)
+- No webhook delivery system
+- No email notifications
+- No Airtel Money integration
+- Only Kenya (KES) fully supported
+
+### Success Metrics (Track Monthly)
+- Active merchants
+- Invoices created
+- Successful payments
+- Paid subscriptions (MRR)
+- Payment success rate
+- Average STK Push delivery time
+- API request volume
+
+---
+
+**Next Review:** After Week 1 security fixes  
+**Priority:** Security → API → Webhooks → Features

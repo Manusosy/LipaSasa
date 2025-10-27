@@ -23,6 +23,7 @@ import { MpesaDarajaSetup } from '@/components/dashboard/MpesaDarajaSetup';
 
 interface PaymentMethods {
   mpesa_paybill: string | null;
+  mpesa_paybill_account: string | null;
   mpesa_till: string | null;
   airtel_money: string | null;
   enable_cards: boolean;
@@ -70,6 +71,7 @@ const paymentProviders = [
 const PaymentMethods = () => {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethods>({
     mpesa_paybill: null,
+    mpesa_paybill_account: null,
     mpesa_till: null,
     airtel_money: null,
     enable_cards: false,
@@ -122,6 +124,7 @@ const PaymentMethods = () => {
       if (data) {
         setPaymentMethods({
           mpesa_paybill: data.mpesa_paybill,
+          mpesa_paybill_account: data.mpesa_paybill_account,
           mpesa_till: data.mpesa_till,
           airtel_money: data.airtel_money,
           enable_cards: data.enable_cards || false,
@@ -167,6 +170,20 @@ const PaymentMethods = () => {
         }
       }
 
+      // Validate paybill details (needs both paybill number and account)
+      if (method === 'mpesa_paybill') {
+        if (!paymentMethods.mpesa_paybill) {
+          setErrors({ mpesa_paybill: 'Please enter paybill number' });
+          setSaving(null);
+          return;
+        }
+        if (!paymentMethods.mpesa_paybill_account) {
+          setErrors({ mpesa_paybill: 'Please enter account number' });
+          setSaving(null);
+          return;
+        }
+      }
+
       // Validate bank details
       if (method === 'bank') {
         if (!paymentMethods.bank_name) {
@@ -186,7 +203,10 @@ const PaymentMethods = () => {
 
       let updateData: any = { user_id: user.id };
       
-      if (method === 'bank') {
+      if (method === 'mpesa_paybill') {
+        updateData.mpesa_paybill = paymentMethods.mpesa_paybill || null;
+        updateData.mpesa_paybill_account = paymentMethods.mpesa_paybill_account || null;
+      } else if (method === 'bank') {
         updateData.bank_name = paymentMethods.bank_name || null;
         updateData.bank_account_number = paymentMethods.bank_account_number || null;
       } else {
@@ -197,7 +217,10 @@ const PaymentMethods = () => {
         .from('payment_methods')
         .upsert(updateData);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Upsert error:', error);
+        throw error;
+      }
 
       toast({
         title: "Payment Method Updated",
@@ -217,16 +240,7 @@ const PaymentMethods = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading payment methods...</p>
-        </div>
-      </div>
-    );
-  }
+  // Removed full-screen loading spinner for better UX
 
   return (
     <div className="min-h-screen bg-background flex w-full">
@@ -343,10 +357,26 @@ const PaymentMethods = () => {
                     }}
                     className={cn("text-sm", errors.mpesa_paybill && 'border-destructive')}
                   />
-                  {errors.mpesa_paybill && (
-                    <p className="text-xs text-destructive mt-1">{errors.mpesa_paybill}</p>
-                  )}
                 </div>
+                <div>
+                  <Label htmlFor="mpesa_paybill_account" className="text-sm">Account Number</Label>
+                  <Input
+                    id="mpesa_paybill_account"
+                    placeholder="e.g., ACC123 or Invoice Number"
+                    value={paymentMethods.mpesa_paybill_account || ''}
+                    onChange={(e) => {
+                      setPaymentMethods(prev => ({ ...prev, mpesa_paybill_account: e.target.value }));
+                      setErrors(prev => ({ ...prev, mpesa_paybill: '' }));
+                    }}
+                    className="text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    The account number customers will see when paying
+                  </p>
+                </div>
+                {errors.mpesa_paybill && (
+                  <p className="text-xs text-destructive">{errors.mpesa_paybill}</p>
+                )}
                 <Button 
                   onClick={() => handleSaveMethod('mpesa_paybill')}
                   disabled={saving === 'mpesa_paybill'}

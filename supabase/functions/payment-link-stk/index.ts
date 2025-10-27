@@ -80,62 +80,104 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // ============================================
-    // TODO: INTEGRATE WITH AGGREGATOR API
-    // ============================================
-    // For now, this is a placeholder that simulates the aggregator call
-    // Replace this section with actual Lipia Online or chosen aggregator API
-    
-    const aggregatorApiUrl = Deno.env.get('AGGREGATOR_API_URL') || 'https://api.lipia.online/v1/stk-push';
-    const aggregatorApiKey = Deno.env.get('AGGREGATOR_API_KEY') || '';
-    
-    // Prepare callback URL for this specific payment
-    const callbackUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-link-callback`;
-    
-    // Prepare aggregator STK Push request
-    const aggregatorPayload = {
-      phone_number: formattedPhone,
-      amount: Math.ceil(amount),
-      currency: link.currency,
-      description: link.description || link.title,
-      reference: `link_${link.id}`,
-      callback_url: callbackUrl,
-      // Settlement details based on payment method
-      settlement: {
-        type: link.method_type,
-        destination: link.method_value,
-      },
-    };
+    // Fetch merchant's M-PESA credentials
+    const { data: credentials, error: credError } = await supabaseClient
+      .from('mpesa_credentials')
+      .select('*')
+      .eq('user_id', link.user_id)
+      .eq('is_active', true)
+      .single();
 
-    console.log('Calling aggregator API...');
-    
-    // For MVP: Simulate aggregator response
-    // TODO: Uncomment when aggregator is configured
-    /*
-    const aggregatorResponse = await fetch(aggregatorApiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${aggregatorApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(aggregatorPayload),
-    });
-
-    if (!aggregatorResponse.ok) {
-      const errorText = await aggregatorResponse.text();
-      console.error('Aggregator API error:', errorText);
+    if (credError || !credentials) {
+      console.error('Credentials fetch error:', credError);
       return new Response(
-        JSON.stringify({ error: 'Failed to initiate payment. Please try again.' }),
+        JSON.stringify({ error: 'M-PESA credentials not configured. Please contact the merchant.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Determine API URL based on environment
+    const apiUrl = credentials.environment === 'production'
+      ? 'https://api.safaricom.co.ke'
+      : 'https://sandbox.safaricom.co.ke';
+
+    console.log(`Using ${credentials.environment || 'sandbox'} environment`);
+
+    // Step 1: Get OAuth token from Safaricom
+    console.log('Requesting OAuth token...');
+    const auth = btoa(`${credentials.consumer_key}:${credentials.consumer_secret}`);
+    
+    const tokenResponse = await fetch(
+      `${apiUrl}/oauth/v1/generate?grant_type=client_credentials`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+        },
+      }
+    );
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('OAuth token error:', errorText);
+      return new Response(
+        JSON.stringify({ error: 'Failed to authenticate with M-PESA. Please contact the merchant.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const aggregatorResult = await aggregatorResponse.json();
-    const checkoutRequestId = aggregatorResult.checkout_request_id;
-    */
+    const { access_token } = await tokenResponse.json();
+    console.log('OAuth token obtained successfully');
 
-    // Simulated response for MVP
-    const checkoutRequestId = `ws_CO_${Date.now()}${Math.random().toString(36).substring(2, 9)}`;
+    // Step 2: Generate STK Push password
+    const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14);
+    const password = btoa(`${credentials.shortcode}${credentials.passkey}${timestamp}`);
+
+    // Step 3: Prepare callback URL
+    const callbackUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/payment-link-callback`;
+
+    // Step 4: Send STK Push request
+    console.log('Sending STK Push request...');
+    const stkPayload = {
+      BusinessShortCode: credentials.shortcode,
+      Password: password,
+      Timestamp: timestamp,
+      TransactionType: 'CustomerPayBillOnline',
+      Amount: Math.ceil(amount),
+      PartyA: formattedPhone,
+      PartyB: credentials.shortcode,
+      PhoneNumber: formattedPhone,
+      CallBackURL: callbackUrl,
+      AccountReference: `LINK-${link.id.substring(0, 8)}`,
+      TransactionDesc: link.description || link.title,
+    };
+
+    const stkResponse = await fetch(
+      `${apiUrl}/mpesa/stkpush/v1/processrequest`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(stkPayload),
+      }
+    );
+
+    const stkResult = await stkResponse.json();
+    console.log('STK Push response:', stkResult);
+
+    if (stkResult.ResponseCode !== '0') {
+      return new Response(
+        JSON.stringify({ 
+          error: stkResult.ResponseDescription || 'STK Push request failed',
+          details: stkResult 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const checkoutRequestId = stkResult.CheckoutRequestID;
     
     console.log('Payment initiated via aggregator:', checkoutRequestId);
 

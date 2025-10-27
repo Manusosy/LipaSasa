@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "LipaSasa": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref=jgixfvipjmkctmmncrzd"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "sbp_9615a74f8c76a09f53669bc8ad693dd5a0927f47"
+      }
+    }
+  }
+}

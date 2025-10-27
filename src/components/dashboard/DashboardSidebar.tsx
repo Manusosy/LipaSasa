@@ -13,6 +13,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Wallet,
+  Link2,
+  ArrowRightLeft,
+  Code,
+  Crown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -33,12 +37,12 @@ const navigationItems = [
   {
     title: 'Payment Links',
     url: '/dashboard/payment-links',
-    icon: FileText,
+    icon: Link2,
   },
   {
     title: 'Transactions',
     url: '/dashboard/transactions',
-    icon: CreditCard,
+    icon: ArrowRightLeft,
   },
   // removed: M-PESA Setup now managed via Payment Methods
   {
@@ -49,12 +53,12 @@ const navigationItems = [
   {
     title: 'API & Integrations',
     url: '/dashboard/api',
-    icon: BarChart3,
+    icon: Code,
   },
   {
     title: 'Subscription',
     url: '/dashboard/subscription',
-    icon: BarChart3,
+    icon: Crown,
   },
 ];
 

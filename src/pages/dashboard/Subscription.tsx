@@ -283,16 +283,7 @@ const Subscription = () => {
     return plan?.max_invoices || 10;
   };
 
-  if (loading || pricingLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // Removed full-screen loading spinner for better UX
 
   const planLimit = getCurrentPlanLimit();
   const usagePercentage = planLimit > 0 ? (invoiceCount / planLimit) * 100 : 0;

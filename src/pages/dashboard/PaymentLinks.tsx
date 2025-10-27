@@ -11,7 +11,7 @@ import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Copy, ExternalLink } from 'lucide-react';
 import { requireMerchant } from '@/lib/auth-utils';
 
 interface PaymentLink {
@@ -36,6 +36,8 @@ const PaymentLinks: React.FC = () => {
   const navigate = useNavigate();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [createdLinkUrl, setCreatedLinkUrl] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [methodType, setMethodType] = useState<'mpesa_paybill' | 'mpesa_till' | 'bank'>('mpesa_paybill');
@@ -166,8 +168,13 @@ const PaymentLinks: React.FC = () => {
         link_slug: slug,
       });
       if (error) throw error;
-      toast({ title: 'Created', description: 'Payment link created' });
+      
+      // Show success dialog with link
+      const linkUrl = `${window.location.origin}/pay/link/${slug}`;
+      setCreatedLinkUrl(linkUrl);
       setCreateOpen(false);
+      setSuccessDialogOpen(true);
+      
       setTitle(''); setDescription(''); setMinAmount(1);
       fetchLinks();
     } catch (e: any) {
@@ -176,16 +183,7 @@ const PaymentLinks: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading payment links...</p>
-        </div>
-      </div>
-    );
-  }
+  // Removed full-screen loading spinner for better UX
 
   return (
     <div className="min-h-screen bg-background flex w-full">
@@ -289,6 +287,61 @@ const PaymentLinks: React.FC = () => {
                 </form>
               </DialogContent>
             </Dialog>
+            
+            {/* Success Dialog */}
+            <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-success">
+                    <CheckCircle2 className="h-5 w-5" />
+                    Payment Link Created!
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Your Payment Link</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Input
+                          value={createdLinkUrl}
+                          readOnly
+                          className="text-sm font-mono"
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(createdLinkUrl);
+                            toast({ title: 'Copied!', description: 'Link copied to clipboard' });
+                          }}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        window.open(createdLinkUrl, '_blank');
+                      }}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Preview
+                    </Button>
+                    <Button
+                      className="flex-1"
+                      onClick={() => setSuccessDialogOpen(false)}
+                    >
+                      Done
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </header>
 
@@ -299,7 +352,19 @@ const PaymentLinks: React.FC = () => {
               <CardDescription>{links.length} link{links.length !== 1 ? 's' : ''} found</CardDescription>
             </CardHeader>
             <CardContent>
-              {links.length === 0 ? (
+              {loading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between p-4 rounded-lg bg-muted/30 animate-pulse">
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-muted rounded w-1/3"></div>
+                        <div className="h-3 bg-muted rounded w-1/2"></div>
+                      </div>
+                      <div className="h-8 w-24 bg-muted rounded"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : links.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <p className="font-medium text-lg mb-2">No payment links yet</p>
                   <p className="text-sm mb-4">Create your first payment link to get started</p>
