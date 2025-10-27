@@ -33,6 +33,12 @@ export const supabase =
           persistSession: true,
           autoRefreshToken: true,
         },
+        global: {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        },
       })
     : // Minimal stub that will throw when used but prevents breaking the whole app at import time.
       ({} as unknown as ReturnType<typeof createClient>);
